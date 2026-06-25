@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Продажник.AI — Аудит карточек WB и Ozon</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#060610;--bg2:#0d0d1f;--bg3:#13132a;--bg4:#1a1a35;--bg5:#22223f;
+  --accent:#6d28d9;--accent2:#8b5cf6;--accent3:#a78bfa;--accent4:#c4b5fd;
+  --green:#059669;--green2:#10b981;--green3:#34d399;
+  --blue:#1d4ed8;--blue2:#3b82f6;--orange:#d97706;--orange2:#f59e0b;
+  --red:#dc2626;--red2:#ef4444;--pink:#be185d;--pink2:#ec4899;
+  --text:#f0eeff;--text2:#9f96c8;--text3:#5b5580;--text4:#3a3560;
+  --border:rgba(109,40,217,0.2);--border2:rgba(255,255,255,0.06);--border3:rgba(255,255,255,0.12);
+  --radius:12px;--sidebar:252px;
+  --shadow:0 4px 24px rgba(0,0,0,0.5);--glow:0 0 40px rgba(109,40,217,0.12);
+  --topbar-h:56px;
+}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;overflow-x:hidden}
+body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(109,40,217,0.08),transparent);pointer-events:none;z-index:0}
+
+/* ─── AUTH ─── */
+#auth-screen{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+.auth-box{width:100%;max-width:420px;padding:10px 0}
+.auth-logo{display:flex;align-items:center;gap:12px;margin-bottom:28px;justify-content:center}
+.auth-logo-icon{width:40px;height:40px;background:linear-gradient(135deg,#6d28d9,#8b5cf6);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 20px rgba(109,40,217,0.4);flex-shrink:0}
+.auth-logo-text{font-size:20px;font-weight:800;background:linear-gradient(135deg,#a78bfa,#6d28d9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.auth-card{background:var(--bg2);border:1px solid var(--border2);border-radius:20px;padding:28px;box-shadow:var(--shadow)}
+.auth-title{font-size:20px;font-weight:800;margin-bottom:5px;letter-spacing:-0.5px}
+.auth-sub{font-size:12px;color:var(--text3);margin-bottom:22px}
+.auth-tabs{display:flex;background:var(--bg3);border-radius:10px;padding:3px;margin-bottom:22px}
+.auth-tab{flex:1;padding:8px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;border-radius:8px;color:var(--text3);transition:all 0.2s;border:none;background:none;font-family:inherit}
+.auth-tab.active{background:var(--bg5);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,0.3)}
+.auth-form-group{margin-bottom:13px}
+.auth-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border 0.15s,box-shadow 0.15s;-webkit-appearance:none}
+.auth-input:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(109,40,217,0.12)}
+.auth-plan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
+.auth-plan{padding:10px 6px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;text-align:center;cursor:pointer;transition:all 0.2s}
+.auth-plan.selected{background:rgba(109,40,217,0.12);border-color:var(--accent2)}
+.auth-plan-name{font-size:11px;font-weight:700;margin-bottom:2px}
+.auth-plan-price{font-size:10px;color:var(--text3)}
+.auth-btn{width:100%;padding:14px;background:linear-gradient(135deg,#6d28d9,#8b5cf6);color:#fff;border:none;border-radius:11px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.2s;box-shadow:0 4px 18px rgba(109,40,217,0.3);margin-top:4px}
+.auth-btn:active{opacity:0.85;transform:scale(0.98)}
+.auth-err{font-size:11px;color:var(--red2);margin-top:8px;display:none;padding:8px 12px;background:rgba(220,38,38,0.08);border-radius:8px;border:1px solid rgba(220,38,38,0.15)}
+label{display:block;font-size:10px;color:var(--text2);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+
+/* ─── OVERLAY (mobile sidebar backdrop) ─── */
+#sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:98;backdrop-filter:blur(2px)}
+#sb-overlay.vis{display:block}
+
+/* ─── SIDEBAR ─── */
+.sidebar{
+  width:var(--sidebar);background:var(--bg2);border-right:1px solid var(--border2);
+  display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;bottom:0;z-index:99;
+  overflow-y:auto;overflow-x:hidden;
+  transition:transform 0.28s cubic-bezier(0.4,0,0.2,1);
+}
+.sidebar::-webkit-scrollbar{width:3px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--bg5);border-radius:4px}
+.sb-logo{padding:16px 14px 14px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
+.sb-logo-wrap{display:flex;align-items:center;gap:10px}
+.sb-logo-icon{width:30px;height:30px;background:linear-gradient(135deg,#6d28d9,#8b5cf6);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.sb-logo-name{font-size:14px;font-weight:800;background:linear-gradient(135deg,#a78bfa,#6d28d9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.sb-close-btn{display:none;width:28px;height:28px;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:var(--text3);flex-shrink:0}
+.sb-user{margin:10px 10px 6px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:11px;display:flex;align-items:center;gap:9px}
+.sb-avatar{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;color:#fff}
+.sb-user-info{flex:1;min-width:0}
+.sb-user-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-user-plan{font-size:10px;color:var(--text3)}
+.sb-plan-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;flex-shrink:0}
+.badge-free{background:var(--bg5);color:var(--text2)}
+.badge-pro{background:rgba(245,158,11,0.15);color:var(--orange2);border:1px solid rgba(245,158,11,0.2)}
+.badge-biz{background:rgba(236,72,153,0.12);color:var(--pink2);border:1px solid rgba(236,72,153,0.2)}
+.sb-limit{margin:0 10px 6px;padding:9px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;font-size:11px;display:none}
+.sb-limit-row{display:flex;justify-content:space-between;color:var(--text3);margin-bottom:6px}
+.sb-limit-bar{height:3px;background:var(--bg5);border-radius:4px;overflow:hidden}
+.sb-limit-fill{height:100%;border-radius:4px;transition:width 0.5s;background:linear-gradient(90deg,#6d28d9,#8b5cf6)}
+.sb-limit-fill.warn{background:linear-gradient(90deg,var(--orange),var(--orange2))}
+.sb-limit-fill.danger{background:linear-gradient(90deg,var(--red),var(--red2))}
+.sb-nav{padding:2px 6px}
+.sb-nav-group{margin-bottom:2px}
+.sb-nav-label{font-size:9px;color:var(--text4);text-transform:uppercase;letter-spacing:1.2px;padding:8px 8px 3px;display:flex;align-items:center;gap:5px}
+.tier-pill{font-size:8px;padding:1px 6px;border-radius:20px;font-weight:700}
+.tier-pro{background:rgba(245,158,11,0.12);color:var(--orange2)}
+.tier-biz{background:rgba(236,72,153,0.1);color:var(--pink2)}
+.sb-nav-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;cursor:pointer;color:var(--text2);font-size:12px;transition:all 0.15s;border:none;background:none;width:100%;text-align:left;font-family:inherit;position:relative;min-height:38px}
+.sb-nav-item:hover{background:var(--bg3);color:var(--text)}
+.sb-nav-item.active{background:rgba(109,40,217,0.12);color:var(--accent3)}
+.sb-nav-item.active::before{content:'';position:absolute;left:-6px;top:50%;transform:translateY(-50%);width:2px;height:16px;background:var(--accent2);border-radius:0 2px 2px 0}
+.sb-nav-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0}
+.sb-nav-lock{margin-left:auto;font-size:10px;opacity:0.4}
+.sb-bottom{margin-top:auto;padding:10px 6px;border-top:1px solid var(--border2)}
+.sb-admin{display:flex;align-items:center;gap:9px;padding:10px 12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.18);border-radius:10px;cursor:pointer;color:var(--green2);font-size:11px;width:100%;text-align:left;font-family:inherit;transition:all 0.2s}
+.sb-admin:hover,.sb-admin:active{background:rgba(16,185,129,0.14)}
+.sb-admin-dot{width:22px;height:22px;background:rgba(16,185,129,0.15);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.sb-logout{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;color:var(--text3);font-size:11px;width:100%;text-align:left;font-family:inherit;background:none;border:none;margin-top:5px;border-radius:8px;transition:color 0.15s}
+
+/* ─── MAIN ─── */
+.main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;position:relative;z-index:1;min-width:0}
+.topbar{height:var(--topbar-h);padding:0 20px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;background:rgba(6,6,16,0.9);backdrop-filter:blur(20px);position:sticky;top:0;z-index:50;gap:12px}
+.topbar-left{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
+.menu-btn{display:none;width:36px;height:36px;background:var(--bg3);border:1px solid var(--border2);border-radius:9px;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0;color:var(--text2);transition:all 0.15s}
+.menu-btn:active{background:var(--bg4)}
+.topbar-titles{min-width:0}
+.topbar-title{font-size:15px;font-weight:700;letter-spacing:-0.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-sub{font-size:10px;color:var(--text3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.online-pill{display:flex;align-items:center;gap:5px;padding:5px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:20px;font-size:10px;color:var(--text3)}
+.online-dot{width:5px;height:5px;background:var(--green2);border-radius:50%;box-shadow:0 0 5px var(--green2)}
+.content{padding:20px 20px 40px;flex:1}
+.screen{display:none}.screen.active{display:block}
+
+/* ─── HERO ─── */
+.hero-wrap{max-width:680px;margin:0 auto;padding:10px 0 0}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:7px;background:rgba(109,40,217,0.1);border:1px solid rgba(109,40,217,0.25);border-radius:20px;padding:5px 14px;font-size:11px;color:var(--accent3);margin-bottom:18px;font-weight:500}
+.hero-eyebrow-dot{width:5px;height:5px;background:var(--accent2);border-radius:50%;box-shadow:0 0 6px var(--accent2)}
+.hero-title{font-size:28px;font-weight:900;letter-spacing:-1px;line-height:1.15;margin-bottom:12px}
+.hero-title em{font-style:normal;background:linear-gradient(135deg,#a78bfa,#6d28d9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:13px;color:var(--text2);margin-bottom:22px;line-height:1.7}
+.audit-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:14px;position:relative;overflow:hidden}
+.audit-box::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(109,40,217,0.6),transparent)}
+.audit-input-wrap{display:flex;gap:8px}
+.audit-url{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:all 0.15s;min-width:0;-webkit-appearance:none}
+.audit-url:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(109,40,217,0.1)}
+.audit-url::placeholder{color:var(--text4)}
+.audit-btn{padding:12px 16px;background:linear-gradient(135deg,#6d28d9,#8b5cf6);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit;transition:all 0.2s;box-shadow:0 4px 16px rgba(109,40,217,0.3);flex-shrink:0}
+.audit-btn:active:not(:disabled){opacity:0.85;transform:scale(0.97)}
+.audit-btn:disabled{opacity:0.4;cursor:not-allowed}
+.audit-hint{font-size:10px;color:var(--text4);margin-top:9px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.limit-counter{display:inline-flex;align-items:center;font-size:11px;color:var(--text3);margin-left:auto}
+.hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px 16px;background:var(--bg3);border:1px solid var(--border2);border-radius:12px}
+.h-stat{display:flex;flex-direction:column;align-items:center;text-align:center;gap:3px}
+.h-stat-num{font-size:16px;font-weight:800;letter-spacing:-0.5px}
+.h-stat-label{font-size:9px;color:var(--text3);line-height:1.3}
+
+/* ─── AUDIT RESULT ─── */
+.audit-result{display:none;margin-top:18px}
+.audit-result.visible{display:block}
+.ar-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap}
+.ar-score-wrap{display:flex;align-items:center;gap:12px}
+.ar-score-ring{position:relative;width:60px;height:60px;flex-shrink:0}
+.ar-score-ring svg{transform:rotate(-90deg)}
+.ar-score-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800}
+.ar-score-title{font-size:16px;font-weight:700;letter-spacing:-0.3px;margin-bottom:3px}
+.ar-score-sub{font-size:10px;color:var(--text3)}
+.ar-actions{display:flex;gap:7px;flex-shrink:0}
+.ar-btn{padding:8px 14px;border-radius:9px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;transition:all 0.15s;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);display:flex;align-items:center;gap:5px;white-space:nowrap}
+.ar-btn:active{opacity:0.8}
+.ar-btn.primary{background:linear-gradient(135deg,#6d28d9,#8b5cf6);color:#fff;border:none}
+.ar-sections{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.ar-section{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;overflow:hidden}
+.ar-section-head{display:flex;align-items:center;padding:12px 14px;cursor:pointer;gap:8px}
+.ar-section-left{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.ar-section-icon{font-size:15px;flex-shrink:0}
+.ar-section-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ar-score-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;flex-shrink:0}
+.score-green{background:rgba(5,150,105,0.15);color:var(--green2);border:1px solid rgba(5,150,105,0.2)}
+.score-yellow{background:rgba(217,119,6,0.12);color:var(--orange2);border:1px solid rgba(217,119,6,0.2)}
+.score-red{background:rgba(220,38,38,0.12);color:var(--red2);border:1px solid rgba(220,38,38,0.2)}
+.ar-section-arrow{color:var(--text4);font-size:10px;transition:transform 0.2s;flex-shrink:0;margin-left:auto}
+.ar-section.open .ar-section-arrow{transform:rotate(180deg)}
+.ar-section-body{padding:0 14px;max-height:0;overflow:hidden;transition:max-height 0.3s,padding 0.3s}
+.ar-section.open .ar-section-body{max-height:400px;padding:0 14px 12px}
+.ar-section-text{font-size:12px;color:var(--text2);line-height:1.7}
+.ar-plan{background:var(--bg2);border:1px solid rgba(109,40,217,0.25);border-radius:12px;padding:16px}
+.ar-plan-title{font-size:13px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.ar-plan-title::before{content:'🎯';font-size:14px}
+.ar-plan-text{font-size:12px;color:var(--text2);line-height:1.8;white-space:pre-wrap}
+
+/* ─── TOOLS ─── */
+.tool-container{max-width:720px}
+.tool-head{margin-bottom:18px}
+.tool-head-title{font-size:18px;font-weight:800;letter-spacing:-0.5px;margin-bottom:5px}
+.tool-head-desc{font-size:12px;color:var(--text3);line-height:1.7}
+.tags-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.tag{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:500;background:rgba(109,40,217,0.1);color:var(--accent3);border:1px solid rgba(109,40,217,0.15)}
+.form-card{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:18px;margin-bottom:14px}
+.form-row{margin-bottom:14px}.form-row:last-child{margin-bottom:0}
+input[type=text],input[type=number],input[type=email],input[type=password],textarea,select{
+  width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:9px;
+  padding:11px 13px;color:var(--text);font-size:14px;font-family:inherit;outline:none;
+  transition:border 0.15s,box-shadow 0.15s;-webkit-appearance:none;
+}
+input:focus,textarea:focus,select:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(109,40,217,0.1)}
+textarea{resize:vertical;min-height:90px;line-height:1.6}
+select option{background:var(--bg3)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.gen-btn{display:inline-flex;align-items:center;gap:8px;padding:13px 24px;background:linear-gradient(135deg,#6d28d9,#8b5cf6);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:inherit;box-shadow:0 4px 16px rgba(109,40,217,0.25);width:100%;justify-content:center;margin-top:4px}
+.gen-btn:active:not(:disabled){opacity:0.85;transform:scale(0.98)}
+.gen-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
+
+/* ─── LOADING ─── */
+.loading{display:none;align-items:center;gap:10px;padding:16px 0;color:var(--text3);font-size:12px}
+.loading.vis{display:flex}
+.spinner{width:16px;height:16px;border:2px solid var(--bg5);border-top-color:var(--accent2);border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.dots{display:flex;gap:3px}
+.dots span{width:4px;height:4px;background:var(--accent2);border-radius:50%;animation:blink 1.2s infinite}
+.dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,100%{opacity:0.3;transform:scaleY(0.5)}50%{opacity:1;transform:scaleY(1)}}
+
+/* ─── RESULT ─── */
+.result-card{background:var(--bg2);border:1px solid rgba(109,40,217,0.2);border-radius:14px;padding:18px;display:none;position:relative}
+.result-card::before{content:'';position:absolute;top:0;left:20px;right:20px;height:1px;background:linear-gradient(90deg,transparent,rgba(109,40,217,0.4),transparent)}
+.result-card.vis{display:block}
+.result-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.result-label{font-size:10px;color:var(--accent3);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;display:flex;align-items:center;gap:5px}
+.result-label::before{content:'';width:5px;height:5px;background:var(--accent3);border-radius:50%;box-shadow:0 0 5px var(--accent3)}
+.copy-btn{padding:6px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text2);font-size:10px;cursor:pointer;font-family:inherit;transition:all 0.15s}
+.copy-btn:active{background:var(--bg4)}
+.result-text{font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap}
+
+/* ─── LOCKED ─── */
+.locked-screen{text-align:center;padding:40px 16px;max-width:460px;margin:0 auto}
+.locked-icon{font-size:40px;margin-bottom:12px}
+.locked-title{font-size:18px;font-weight:800;margin-bottom:7px;letter-spacing:-0.4px}
+.locked-desc{font-size:12px;color:var(--text3);margin:0 auto 16px;line-height:1.7}
+.locked-features{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:16px;margin:0 auto 20px;text-align:left}
+.locked-features li{font-size:12px;color:var(--text2);padding:4px 0;display:flex;align-items:center;gap:8px;list-style:none}
+.locked-check{color:var(--green2);font-weight:700;font-size:11px;flex-shrink:0}
+.unlock-btn{display:inline-flex;align-items:center;gap:8px;padding:13px 24px;border-radius:11px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.2s;border:none;color:#fff;width:100%;justify-content:center}
+.unlock-pro{background:linear-gradient(135deg,#d97706,#f59e0b);box-shadow:0 4px 16px rgba(217,119,6,0.3)}
+.unlock-biz{background:linear-gradient(135deg,#be185d,#ec4899);box-shadow:0 4px 16px rgba(190,24,93,0.3)}
+
+/* ─── HISTORY ─── */
+.history-list{display:flex;flex-direction:column;gap:8px}
+.history-item{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:13px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.15s}
+.history-item:active{background:var(--bg3)}
+.history-score{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0}
+.history-info{flex:1;min-width:0}
+.history-url{font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.history-meta{font-size:10px;color:var(--text3);display:flex;gap:8px}
+.history-actions{display:flex;gap:5px;flex-shrink:0}
+.hist-btn{padding:6px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text2);font-size:10px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.hist-btn.primary{background:rgba(109,40,217,0.12);border-color:rgba(109,40,217,0.25);color:var(--accent3)}
+.empty-state{text-align:center;padding:40px 20px;color:var(--text3);font-size:13px}
+.empty-state-icon{font-size:32px;margin-bottom:10px}
+
+/* ─── FINANCE ─── */
+.fin-results{display:none;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.fin-results.vis{display:grid}
+.fin-card{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:14px}
+.fin-card-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:5px}
+.fin-card-value{font-size:20px;font-weight:800;letter-spacing:-0.5px}
+.fin-card-value.green{color:var(--green2)}.fin-card-value.red{color:var(--red2)}.fin-card-value.blue{color:var(--blue2)}
+
+/* ─── PRICING ─── */
+.pricing-header{text-align:center;margin-bottom:24px}
+.pricing-h1{font-size:24px;font-weight:900;letter-spacing:-1px;margin-bottom:6px}
+.pricing-h1 span{background:linear-gradient(135deg,#a78bfa,#6d28d9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.pricing-sub{font-size:12px;color:var(--text3)}
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:920px}
+.p-card{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:22px 18px;position:relative;overflow:hidden;transition:all 0.2s}
+.p-card.featured{border-color:rgba(109,40,217,0.35);background:linear-gradient(160deg,rgba(109,40,217,0.08),var(--bg2))}
+.p-popular{position:absolute;top:-1px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#6d28d9,#8b5cf6);color:#fff;font-size:9px;font-weight:700;padding:4px 14px;border-radius:0 0 10px 10px;white-space:nowrap}
+.p-plan{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.p-price{font-size:32px;font-weight:900;letter-spacing:-2px;margin-bottom:2px;line-height:1}
+.p-period{font-size:10px;color:var(--text3);margin-bottom:16px}
+.p-divider{height:1px;background:var(--border2);margin-bottom:14px}
+.p-features{list-style:none;margin-bottom:20px}
+.p-features li{font-size:11px;color:var(--text2);padding:4px 0;display:flex;align-items:flex-start;gap:6px;line-height:1.5}
+.p-check{color:var(--green2);font-weight:700;flex-shrink:0;margin-top:1px}
+.p-btn{width:100%;padding:12px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.2s;border:1px solid var(--border2);background:var(--bg3);color:var(--text)}
+.p-btn.featured-btn{background:linear-gradient(135deg,#6d28d9,#8b5cf6);border:none;color:#fff}
+
+/* ─── MODAL ─── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:16px}
+.modal-overlay.vis{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:28px;max-width:420px;width:100%;position:relative;animation:mIn 0.2s ease;box-shadow:0 24px 60px rgba(0,0,0,0.6)}
+@keyframes mIn{from{opacity:0;transform:scale(0.95) translateY(8px)}to{opacity:1;transform:none}}
+.modal-x{position:absolute;top:14px;right:14px;width:28px;height:28px;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:var(--text3)}
+.modal-icon{font-size:30px;margin-bottom:10px}
+.modal-title{font-size:18px;font-weight:800;margin-bottom:6px;letter-spacing:-0.5px}
+.modal-desc{font-size:12px;color:var(--text3);margin-bottom:18px;line-height:1.7}
+.modal-tg{display:flex;align-items:center;gap:12px;padding:14px;background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.18);border-radius:12px;margin-bottom:12px;text-decoration:none;color:var(--text);transition:all 0.15s}
+.modal-tg:active{background:rgba(59,130,246,0.14)}
+.modal-tg-icon{width:36px;height:36px;background:linear-gradient(135deg,#1d4ed8,#3b82f6);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.modal-tg-name{font-size:13px;font-weight:600}
+.modal-tg-sub{font-size:10px;color:var(--text3)}
+.modal-close-btn{width:100%;padding:11px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;color:var(--text2);font-size:12px;cursor:pointer;font-family:inherit}
+
+/* ─── TOAST ─── */
+.toast{position:fixed;bottom:20px;right:16px;left:16px;max-width:360px;margin:0 auto;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:11px 16px;font-size:13px;color:var(--text);z-index:400;display:flex;align-items:center;gap:8px;transform:translateY(80px);opacity:0;transition:all 0.3s;pointer-events:none}
+.toast.show{transform:none;opacity:1}
+.toast-dot{width:7px;height:7px;background:var(--green2);border-radius:50%;box-shadow:0 0 6px var(--green2);flex-shrink:0}
+
+/* ─── MOBILE BOTTOM NAV ─── */
+.mobile-bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border2);padding:6px 4px;z-index:97;gap:2px}
+.mbn-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;border-radius:8px;cursor:pointer;color:var(--text3);font-size:9px;font-weight:500;border:none;background:none;font-family:inherit;transition:all 0.15s;min-width:0}
+.mbn-item:active{background:var(--bg3)}
+.mbn-item.active{color:var(--accent3)}
+.mbn-icon{font-size:18px;line-height:1}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bg5);border-radius:4px}
+
+/* ════════════════════════════════════
+   RESPONSIVE — TABLET
+════════════════════════════════════ */
+@media(max-width:900px){
+  .pricing-grid{grid-template-columns:1fr}
+  .p-card.featured .p-popular{display:block}
+}
+
+/* ════════════════════════════════════
+   RESPONSIVE — MOBILE
+════════════════════════════════════ */
+@media(max-width:680px){
+  :root{--sidebar:272px}
+  
+  /* Sidebar slides off-screen by default on mobile */
+  .sidebar{transform:translateX(-100%);box-shadow:none}
+  .sidebar.open{transform:translateX(0);box-shadow:0 0 40px rgba(0,0,0,0.5)}
+  .sb-close-btn{display:flex}
+  
+  /* Main takes full width */
+  .main{margin-left:0}
+  
+  /* Topbar shows hamburger */
+  .menu-btn{display:flex}
+  .online-pill{display:none}
+  
+  /* Content padding */
+  .content{padding:14px 14px 100px}
+  
+  /* Hero */
+  .hero-title{font-size:22px;letter-spacing:-0.5px}
+  .hero-sub{font-size:12px}
+  
+  /* Audit input stacks */
+  .audit-input-wrap{flex-direction:column}
+  .audit-btn{width:100%;justify-content:center;padding:14px}
+  
+  /* Stats 2x2 on mobile */
+  .hero-stats{grid-template-columns:1fr 1fr;gap:8px}
+  
+  /* Audit sections 1 col */
+  .ar-sections{grid-template-columns:1fr}
+  .ar-header{flex-direction:column;align-items:flex-start}
+  .ar-actions{width:100%;justify-content:flex-end}
+  
+  /* Finance 1 col on mobile */
+  .fin-results{grid-template-columns:1fr}
+  .form-grid-3{grid-template-columns:1fr 1fr}
+  
+  /* Tool */
+  .tool-head-title{font-size:16px}
+  
+  /* History items */
+  .history-actions{flex-direction:column}
+  
+  /* Pricing single col */
+  .pricing-grid{grid-template-columns:1fr;max-width:100%}
+  
+  /* Form grid 1 col on very small */
+  .form-grid{grid-template-columns:1fr}
+  
+  /* Bottom nav shown */
+  .mobile-bottom-nav{display:flex}
+  
+  /* Toast full width */
+  .toast{left:12px;right:12px;max-width:none}
+  
+  /* Modal */
+  .modal{padding:22px 18px}
+}
+
+@media(max-width:380px){
+  .hero-title{font-size:20px}
+  .form-grid-3{grid-template-columns:1fr}
+  .auth-plan-grid{grid-template-columns:repeat(3,1fr)}
+  .audit-hint span{display:none}
+  .audit-hint span:first-child{display:inline}
+}
+</style>
+</head>
+<body>
+
+
+<!-- ═══════════════ AUTH ═══════════════ -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">🚀</div>
+      <div>
+        <div class="auth-logo-text">Продажник.AI</div>
+        <div style="font-size:10px;color:var(--text4);text-align:center">Умный помощник для WB и Ozon</div>
+      </div>
+    </div>
+    <div class="auth-card">
+      <div class="auth-title" id="auth-title">С возвращением</div>
+      <div class="auth-sub" id="auth-sub">Войдите чтобы продолжить работу</div>
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Войти</button>
+        <button class="auth-tab" id="tab-register" onclick="switchTab('register')">Регистрация</button>
+      </div>
+
+      <!-- LOGIN -->
+      <div id="form-login">
+        <div class="auth-form-group"><label>Email</label><input class="auth-input" type="email" id="l-email" placeholder="email@example.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <div class="auth-form-group"><label>Пароль</label><input class="auth-input" type="password" id="l-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <div class="auth-err" id="l-err">Неверный email или пароль</div>
+        <button class="auth-btn" onclick="doLogin()">Войти →</button>
+        <div style="font-size:10px;color:var(--text4);margin-top:10px;text-align:center">Нет аккаунта? <button onclick="switchTab('register')" style="background:none;border:none;color:var(--accent3);cursor:pointer;font-size:10px;font-family:inherit">Зарегистрируйтесь</button></div>
+      </div>
+
+      <!-- REGISTER -->
+      <div id="form-register" style="display:none">
+        <div class="auth-form-group"><label>Имя</label><input class="auth-input" type="text" id="r-name" placeholder="Ваше имя" onkeydown="if(event.key==='Enter')doRegister()"></div>
+        <div class="auth-form-group"><label>Email</label><input class="auth-input" type="email" id="r-email" placeholder="email@example.com" onkeydown="if(event.key==='Enter')doRegister()"></div>
+        <div class="auth-form-group"><label>Пароль</label><input class="auth-input" type="password" id="r-pass" placeholder="Минимум 6 символов" onkeydown="if(event.key==='Enter')doRegister()"></div>
+        <div class="auth-form-group">
+          <label>Тариф</label>
+          <div class="auth-plan-grid">
+            <div class="auth-plan selected" id="plan-free" onclick="selectPlan('free')">
+              <div class="auth-plan-name" style="color:var(--text)">Старт</div>
+              <div class="auth-plan-price">Бесплатно</div>
+            </div>
+            <div class="auth-plan" id="plan-pro" onclick="selectPlan('pro')">
+              <div class="auth-plan-name" style="color:var(--orange2)">Про</div>
+              <div class="auth-plan-price">990 ₽/мес</div>
+            </div>
+            <div class="auth-plan" id="plan-biz" onclick="selectPlan('biz')">
+              <div class="auth-plan-name" style="color:var(--pink2)">Бизнес</div>
+              <div class="auth-plan-price">2990 ₽/мес</div>
+            </div>
+          </div>
+        </div>
+        <div class="auth-err" id="r-err">Заполните все поля</div>
+        <button class="auth-btn" onclick="doRegister()">Создать аккаунт →</button>
+        <div style="font-size:10px;color:var(--text4);margin-top:10px;text-align:center">Уже есть аккаунт? <button onclick="switchTab('login')" style="background:none;border:none;color:var(--accent3);cursor:pointer;font-size:10px;font-family:inherit">Войдите</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ═══════════════ APP ═══════════════ -->
+<div id="sb-overlay" onclick="closeSidebar()"></div>
+<div id="app">
+<div class="app-layout">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-wrap">
+      <div class="sb-logo-icon">🚀</div>
+      <div><div class="sb-logo-name">Продажник.AI</div></div>
+    </div>
+    <div class="sb-close-btn" onclick="closeSidebar()">✕</div>
+  </div>
+
+  <div class="sb-user" id="sb-user-block">
+    <div class="sb-avatar" id="sb-avatar">А</div>
+    <div class="sb-user-info"><div class="sb-user-name" id="sb-name">Пользователь</div><div class="sb-user-plan" id="sb-plan-label">Тариф: Старт</div></div>
+    <div class="sb-plan-badge badge-free" id="sb-badge">FREE</div>
+  </div>
+
+  <div class="sb-limit" id="sb-limit-box">
+    <div class="sb-limit-row"><span>Анализов сегодня</span><span id="sb-limit-count">0 / 3</span></div>
+    <div class="sb-limit-bar"><div class="sb-limit-fill" id="sb-limit-fill" style="width:0%"></div></div>
+  </div>
+
+  <nav class="sb-nav">
+    <div class="sb-nav-group">
+      <div class="sb-nav-label">Главное</div>
+      <button class="sb-nav-item active" onclick="nav('audit',this)"><span class="sb-nav-icon">🔍</span><span>Аудит карточки</span></button>
+      <button class="sb-nav-item" onclick="nav('reviews',this)"><span class="sb-nav-icon">⭐</span><span>Анализ отзывов</span></button>
+      <button class="sb-nav-item" onclick="nav('history',this)"><span class="sb-nav-icon">📋</span><span>История анализов</span></button>
+    </div>
+    <div class="sb-nav-group">
+      <div class="sb-nav-label">Контент</div>
+      <button class="sb-nav-item" onclick="nav('descriptions',this)"><span class="sb-nav-icon">📝</span><span>Описания товаров</span></button>
+      <button class="sb-nav-item" onclick="nav('keywords',this)"><span class="sb-nav-icon">🔑</span><span>SEO ключевые слова</span></button>
+      <button class="sb-nav-item" onclick="nav('offers',this)"><span class="sb-nav-icon">🎯</span><span>Офферы и УТП</span></button>
+    </div>
+    <div class="sb-nav-group">
+      <div class="sb-nav-label">Аналитика <span class="tier-pill tier-pro">ПРО</span></div>
+      <button class="sb-nav-item" onclick="nav('finance',this)"><span class="sb-nav-icon">💰</span><span>Прибыль и расходы</span><span class="sb-nav-lock">🔑</span></button>
+      <button class="sb-nav-item" onclick="nav('taxes',this)"><span class="sb-nav-icon">🧾</span><span>Расчёт налогов</span><span class="sb-nav-lock">🔑</span></button>
+      <button class="sb-nav-item" onclick="nav('competitors',this)"><span class="sb-nav-icon">📊</span><span>Конкуренты</span><span class="sb-nav-lock">🔑</span></button>
+    </div>
+    <div class="sb-nav-group">
+      <div class="sb-nav-label">Продвинутое <span class="tier-pill tier-biz">БИЗНЕС</span></div>
+      <button class="sb-nav-item" onclick="nav('mentor',this)"><span class="sb-nav-icon">🧠</span><span>AI-наставник</span><span class="sb-nav-lock">🔐</span></button>
+      <button class="sb-nav-item" onclick="nav('seasonal',this)"><span class="sb-nav-icon">📅</span><span>Сезонность</span><span class="sb-nav-lock">🔐</span></button>
+      <button class="sb-nav-item" onclick="nav('findgoods',this)"><span class="sb-nav-icon">💡</span><span>Поиск товаров</span><span class="sb-nav-lock">🔐</span></button>
+    </div>
+    <div class="sb-nav-group">
+      <div class="sb-nav-label">Аккаунт</div>
+      <button class="sb-nav-item" onclick="nav('plans',this)"><span class="sb-nav-icon">⭐</span><span>Тарифы</span></button>
+    </div>
+  </nav>
+
+  <div class="sb-bottom">
+    <button class="sb-admin" onclick="showM('admin')">
+      <div class="sb-admin-dot">✈️</div>
+      <div><div style="font-weight:600">Написать нам</div><div style="font-size:9px;opacity:0.6">@SU_57_T_90M</div></div>
+    </button>
+    
+    <button class="sb-logout" onclick="doLogout()">← Выйти</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="menu-btn" onclick="toggleSidebar()">☰</div>
+      <div class="topbar-titles"><div class="topbar-title" id="tb-title">Аудит карточки</div><div class="topbar-sub" id="tb-sub">Узнай почему твой товар не продаётся</div></div>
+    </div>
+    <div class="topbar-right"><div class="online-pill"><div class="online-dot"></div><span>AI онлайн</span></div></div>
+  </div>
+
+  <div class="content">
+
+    <!-- ═══ AUDIT ═══ -->
+    <div class="screen active" id="s-audit">
+      <div class="hero-wrap">
+        <div class="hero-eyebrow"><div class="hero-eyebrow-dot"></div>Бесплатный аудит карточки</div>
+        <h1 class="hero-title">Узнай за <em>30 секунд,</em><br>почему твой товар<br>не продаётся</h1>
+        <p class="hero-sub">AI проверит заголовок, описание, фото, SEO, цену и отзывы. Даст оценку и конкретный план действий — что исправить в первую очередь.</p>
+
+        <div class="audit-box">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:10px;font-weight:500">Вставьте ссылку на ваш товар</div>
+          <div class="audit-input-wrap">
+            <input class="audit-url" type="text" id="audit-url" placeholder="https://www.wildberries.ru/catalog/..." oninput="updateAuditBtn()">
+            <button class="audit-btn" id="audit-btn" onclick="runAudit()" disabled>🔍 Получить аудит</button>
+          </div>
+          <div class="audit-hint">
+            <span>✓ WB и Ozon</span>
+            <span style="opacity:0.4">·</span>
+            <span>✓ 6 параметров анализа</span>
+            <span style="opacity:0.4">·</span>
+            <span>✓ PDF-отчёт</span>
+            <div class="limit-counter" id="limit-label"></div>
+          </div>
+        </div>
+
+        <div class="loading vis" id="audit-loading" style="display:none">
+          <div class="spinner"></div><div class="dots"><span></span><span></span><span></span></div>
+          <span id="audit-loading-text">Анализируем карточку...</span>
+        </div>
+
+        <div class="audit-result" id="audit-result">
+          <div class="ar-header">
+            <div class="ar-score-wrap">
+              <div class="ar-score-ring">
+                <svg width="64" height="64" viewBox="0 0 64 64">
+                  <circle cx="32" cy="32" r="26" fill="none" stroke="var(--bg5)" stroke-width="5"/>
+                  <circle cx="32" cy="32" r="26" fill="none" stroke="var(--accent2)" stroke-width="5" stroke-dasharray="163.4" id="ar-ring" stroke-dashoffset="163.4" stroke-linecap="round"/>
+                </svg>
+                <div class="ar-score-num" id="ar-num">0</div>
+              </div>
+              <div>
+                <div class="ar-score-title" id="ar-verdict">Аудит завершён</div>
+                <div class="ar-score-sub" id="ar-sub">из 100 баллов</div>
+              </div>
+            </div>
+            <div class="ar-actions">
+              <button class="ar-btn" onclick="saveToHistory()">💾 Сохранить</button>
+              <button class="ar-btn primary" onclick="exportPDF()">📄 PDF</button>
+            </div>
+          </div>
+
+          <div class="ar-sections" id="ar-sections">
+            <!-- filled by JS -->
+          </div>
+
+          <div class="ar-plan">
+            <div class="ar-plan-title">Ваш план действий</div>
+            <div class="ar-plan-text" id="ar-plan"></div>
+          </div>
+        </div>
+
+        <div style="margin-top:24px">
+          <div class="hero-stats">
+            <div class="h-stat">
+              <div class="h-stat-num" style="color:var(--accent3)">6</div>
+              <div class="h-stat-label">параметров<br>проверки</div>
+            </div>
+            <div style="width:1px;background:var(--border2)"></div>
+            <div class="h-stat">
+              <div class="h-stat-num" style="color:var(--green2)">30s</div>
+              <div class="h-stat-label">время<br>анализа</div>
+            </div>
+            <div style="width:1px;background:var(--border2)"></div>
+            <div class="h-stat">
+              <div class="h-stat-num" style="color:var(--orange2)">PDF</div>
+              <div class="h-stat-label">готовый<br>отчёт</div>
+            </div>
+            <div style="width:1px;background:var(--border2)"></div>
+            <div class="h-stat">
+              <div class="h-stat-num" style="color:var(--pink2)">WB+</div>
+              <div class="h-stat-label">Ozon<br>поддержка</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ REVIEWS ═══ -->
+    <div class="screen" id="s-reviews">
+      <div class="tool-container">
+        <div class="tool-head">
+          <div class="tool-head-title">⭐ Анализ отзывов покупателей</div>
+          <div class="tool-head-desc">Вставьте отзывы — AI найдёт главные жалобы, что хвалят покупатели, и что улучшить чтобы повысить рейтинг и продажи.</div>
+          <div class="tags-row"><span class="tag">Жалобы</span><span class="tag">Преимущества</span><span class="tag">Улучшения</span><span class="tag">Рейтинг</span></div>
+        </div>
+        <div class="form-card">
+          <div class="form-row"><label>Ваш товар</label><input type="text" id="rev-product" placeholder="Например: Беспроводные наушники TWS"></div>
+          <div class="form-row"><label>Отзывы покупателей (скопируйте из карточки)</label><textarea id="rev-text" style="min-height:130px" placeholder="Вставьте отзывы здесь — негативные и позитивные. Чем больше отзывов, тем точнее анализ."></textarea></div>
+          <div class="form-row"><label>Текущий рейтинг товара</label><select id="rev-rating"><option>5.0 ⭐⭐⭐⭐⭐</option><option>4.5 ⭐⭐⭐⭐½</option><option>4.0 ⭐⭐⭐⭐</option><option>3.5 ⭐⭐⭐½</option><option>Ниже 3.5</option></select></div>
+          <button class="gen-btn" onclick="analyzeReviews()">⭐ Проанализировать отзывы</button>
+        </div>
+        <div class="loading" id="rev-loading"><div class="spinner"></div><div class="dots"><span></span><span></span><span></span></div><span>Анализируем отзывы покупателей...</span></div>
+        <div class="result-card" id="rev-result"><div class="result-header"><span class="result-label">Анализ отзывов</span><button class="copy-btn" onclick="cp('rev-text-out')">Копировать</button></div><div class="result-text" id="rev-text-out"></div></div>
+      </div>
+    </div>
+
+    <!-- ═══ HISTORY ═══ -->
+    <div class="screen" id="s-history">
+      <div style="max-width:720px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+          <div><div class="tool-head-title" style="font-size:18px">📋 История анализов</div><div style="font-size:11px;color:var(--text3);margin-top:3px">Все ваши аудиты сохранены здесь</div></div>
+          <button class="ar-btn" onclick="clearHistory()" style="color:var(--red2);border-color:rgba(220,38,38,0.2)">🗑 Очистить</button>
+        </div>
+        <div class="history-list" id="history-list"></div>
+      </div>
+    </div>
+
+    <!-- ═══ DESCRIPTIONS ═══ -->
+    <div class="screen" id="s-descriptions">
+      <div class="tool-container">
+        <div class="tool-head">
+          <div class="tool-head-title">📝 Описание товара</div>
+          <div class="tool-head-desc">Продающий SEO-оптимизированный текст для карточки на WB и Ozon. С ключевыми словами, структурой и призывом к действию.</div>
+          <div class="tags-row"><span class="tag">WB</span><span class="tag">Ozon</span><span class="tag">SEO</span><span class="tag">Конверсия</span></div>
+        </div>
+        <div class="form-card">
+          <div class="form-row"><label>Название товара</label><input type="text" id="d-product" placeholder="Например: Беспроводные наушники TWS с шумоподавлением"></div>
+          <div class="form-grid">
+            <div><label>Категория</label><select id="d-cat"><option>Электроника и гаджеты</option><option>Одежда и аксессуары</option><option>Дом и интерьер</option><option>Красота и уход</option><option>Спорт и отдых</option><option>Детские товары</option><option>Авто товары</option><option>Другое</option></select></div>
+            <div><label>Платформа</label><select id="d-platform"><option>Wildberries</option><option>Ozon</option><option>Яндекс Маркет</option><option>Все сразу</option></select></div>
+          </div>
+          <div class="form-row"><label>Ключевые характеристики</label><input type="text" id="d-features" placeholder="30 часов работы, Bluetooth 5.3, защита IPX5..."></div>
+          <button class="gen-btn" onclick="genDesc()">✨ Создать описание</button>
+        </div>
+        <div class="loading" id="d-loading"><div class="spinner"></div><span>Пишем продающее описание...</span></div>
+        <div class="result-card" id="d-result"><div class="result-header"><span class="result-label">Описание готово</span><button class="copy-btn" onclick="cp('d-out')">Копировать</button></div><div class="result-text" id="d-out"></div></div>
+      </div>
+    </div>
+
+    <!-- ═══ KEYWORDS ═══ -->
+    <div class="screen" id="s-keywords">
+      <div class="tool-container">
+        <div class="tool-head">
+          <div class="tool-head-title">🔑 SEO ключевые слова</div>
+          <div class="tool-head-desc">Правильные ключевые слова выводят товар в топ поиска. AI подберёт высоко-, средне- и низкочастотные запросы и оптимизирует заголовок.</div>
+          <div class="tags-row"><span class="tag">Топ выдачи</span><span class="tag">Трафик</span><span class="tag">Заголовок</span></div>
+        </div>
+        <div class="form-card">
+          <div class="form-row"><label>Ваш товар</label><input type="text" id="kw-product" placeholder="Как называется ваш товар?"></div>
+          <div class="form-grid">
+            <div><label>Платформа</label><select id="kw-platform"><option>Wildberries</option><option>Ozon</option><option>Яндекс Маркет</option></select></div>
+            <div><label>Категория</label><input type="text" id="kw-cat" placeholder="Электроника, Одежда..."></div>
+          </div>
+          <button class="gen-btn" onclick="genKeywords()">🔑 Найти ключевые слова</button>
+        </div>
+        <div class="loading" id="kw-loading"><div class="spinner"></div><span>Подбираем ключевые слова...</span></div>
+        <div class="result-card" id="kw-result"><div class="result-header"><span class="result-label">Ключевые слова</span><button class="copy-btn" onclick="cp('kw-out')">Копировать</button></div><div class="result-text" id="kw-out"></div></div>
+      </div>
+    </div>
+
+    <!-- ═══ OFFERS ═══ -->
+    <div class="screen" id="s-offers">
+      <div class="tool-container">
+        <div class="tool-head">
+          <div class="tool-head-title">🎯 Оффер и УТП</div>
+          <div class="tool-head-desc">Уникальное торговое предложение — почему купят именно у вас. Несколько вариантов для карточки, соцсетей и рекламы.</div>
+          <div class="tags-row"><span class="tag">Конверсия</span><span class="tag">Позиционирование</span></div>
+        </div>
+        <div class="form-card">
+          <div class="form-row"><label>Ваш товар или услуга</label><input type="text" id="o-product" placeholder="Что продаёте?"></div>
+          <div class="form-row"><label>Главное преимущество</label><input type="text" id="o-adv" placeholder="Чем вы лучше конкурентов?"></div>
+          <div class="form-grid">
+            <div><label>Целевая аудитория</label><input type="text" id="o-audience" placeholder="Кто ваш покупатель?"></div>
+            <div><label>Цена (руб)</label><input type="number" id="o-price" placeholder="2490"></div>
+          </div>
+          <button class="gen-btn" onclick="genOffer()">✨ Создать оффер</button>
+        </div>
+        <div class="loading" id="o-loading"><div class="spinner"></div><span>Создаём убийственный оффер...</span></div>
+        <div class="result-card" id="o-result"><div class="result-header"><span class="result-label">Оффер готов</span><button class="copy-btn" onclick="cp('o-out')">Копировать</button></div><div class="result-text" id="o-out"></div></div>
+      </div>
+    </div>
+
+    <!-- ═══ FINANCE — PRO ═══ -->
+    <div class="screen" id="s-finance">
+      <div class="tool-container">
+        <div id="finance-locked" class="locked-screen" style="display:none">
+          <div class="locked-icon">💰</div>
+          <div class="locked-title">Прибыль и расходы</div>
+          <div class="locked-desc">Полный финансовый расчёт + AI-рекомендации как увеличить прибыль. Узнайте реальную маржинальность вашего бизнеса.</div>
+          <ul class="locked-features">
+            <li><span class="locked-check">✓</span>Выручка, расходы, чистая прибыль</li>
+            <li><span class="locked-check">✓</span>Все затраты: комиссии, логистика, реклама</li>
+            <li><span class="locked-check">✓</span>AI-рекомендации по росту прибыли</li>
+            <li><span class="locked-check">✓</span>Маржинальность и точка безубыточности</li>
+          </ul>
+          <button class="unlock-btn unlock-pro" onclick="showM('pro')">⭐ Подключить Про — 990 ₽/мес</button>
+        </div>
+        <div id="finance-content">
+          <div class="tool-head">
+            <div class="tool-head-title">💰 Прибыль и расходы</div>
+            <div class="tool-head-desc">Введите данные — получите полный расчёт и рекомендации AI как увеличить прибыль.</div>
+          </div>
+          <div class="form-card">
+            <div class="form-grid-3">
+              <div><label>Цена продажи (руб)</label><input type="number" id="f-price" placeholder="2490"></div>
+              <div><label>Себестоимость (руб)</label><input type="number" id="f-cost" placeholder="890"></div>
+              <div><label>Продаж в месяц</label><input type="number" id="f-qty" placeholder="150"></div>
+              <div><label>Комиссия маркетплейса (%)</label><input type="number" id="f-comm" placeholder="15"></div>
+              <div><label>Логистика (руб/шт)</label><input type="number" id="f-log" placeholder="80"></div>
+              <div><label>Реклама (руб/мес)</label><input type="number" id="f-ads" placeholder="15000"></div>
+            </div>
+            <div style="margin-top:14px"><button class="gen-btn" onclick="calcFinance()">💰 Рассчитать</button></div>
+          </div>
+          <div class="fin-results" id="fin-results">
+            <div class="fin-card"><div class="fin-card-label">Выручка</div><div class="fin-card-value blue" id="f-rev">—</div></div>
+            <div class="fin-card"><div class="fin-card-label">Расходы</div><div class="fin-card-value red" id="f-exp">—</div></div>
+            <div class="fin-card"><div class="fin-card-label">Чистая прибыль</div><div class="fin-card-value green" id="f-prof">—</div><div style="font-size:10px;color:var(--text3);margin-top:4px" id="f-margin"></div></div>
+          </div>
+          <div class="loading" id="f-loading" style="margin-top:14px"><div class="spinner"></div><span>AI анализирует финансы...</span></div>
+          <div class="result-card" id="f-result" style="margin-top:14px"><div class="result-header"><span class="result-label">AI-рекомендации</span><button class="copy-btn" onclick="cp('f-out')">Копировать</button></div><div class="result-text" id="f-out"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ TAXES — PRO ═══ -->
+    <div class="screen" id="s-taxes">
+      <div class="tool-container">
+        <div id="taxes-locked" class="locked-screen" style="display:none">
+          <div class="locked-icon">🧾</div>
+          <div class="locked-title">Расчёт налогов</div>
+          <div class="locked-desc">УСН 6%, УСН 15%, самозанятый — считаем что выгоднее именно для вас. Советы как законно платить меньше.</div>
+          <ul class="locked-features">
+            <li><span class="locked-check">✓</span>Расчёт налога за месяц и год</li>
+            <li><span class="locked-check">✓</span>Сравнение всех режимов налогообложения</li>
+            <li><span class="locked-check">✓</span>Законные способы уменьшить налог</li>
+            <li><span class="locked-check">✓</span>Страховые взносы ИП</li>
+          </ul>
+          <button class="unlock-btn unlock-pro" onclick="showM('pro')">⭐ Подключить Про — 990 ₽/мес</button>
+        </div>
+        <div id="taxes-content">
+          <div class="tool-head">
+            <div class="tool-head-title">🧾 Расчёт налогов</div>
+            <div class="tool-head-desc">Считаем налоги, сравниваем режимы и советуем как законно платить меньше.</div>
+          </div>
+          <div class="form-card">
+            <div class="form-row"><label>Статус</label><select id="t-status"><option>ИП на УСН 6%</option><option>ИП на УСН 15%</option><option>Самозанятый</option><option>Помогите выбрать</option></select></div>
+            <div class="form-grid">
+              <div><label>Доход в месяц (руб)</label><input type="number" id="t-income" placeholder="300000"></div>
+              <div><label>Расходы в месяц (руб)</label><input type="number" id="t-exp" placeholder="180000"></div>
+            </div>
+            <div class="form-row" style="margin-top:12px"><label>Вопрос (необязательно)</label><input type="text" id="t-q" placeholder="Когда платить? Как уменьшить?"></div>
+            <button class="gen-btn" onclick="calcTaxes()">🧾 Рассчитать налоги</button>
+          </div>
+          <div class="loading" id="t-loading"><div class="spinner"></div><span>Считаем ваши налоги...</span></div>
+          <div class="result-card" id="t-result"><div class="result-header"><span class="result-label">Расчёт налогов</span><button class="copy-btn" onclick="cp('t-out')">Копировать</button></div><div class="result-text" id="t-out"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ COMPETITORS — PRO ═══ -->
+    <div class="screen" id="s-competitors">
+      <div class="tool-container">
+        <div id="comp-locked" class="locked-screen" style="display:none">
+          <div class="locked-icon">📊</div>
+          <div class="locked-title">Анализ конкурентов</div>
+          <div class="locked-desc">AI-анализ вашей ниши. Слабые места конкурентов, стратегия как их обойти, советы по SEO и рекламе.</div>
+          <ul class="locked-features">
+            <li><span class="locked-check">✓</span>Анализ конкурентной среды</li>
+            <li><span class="locked-check">✓</span>Слабые места конкурентов</li>
+            <li><span class="locked-check">✓</span>Стратегия дифференциации</li>
+            <li><span class="locked-check">✓</span>SEO против конкурентов</li>
+          </ul>
+          <button class="unlock-btn unlock-pro" onclick="showM('pro')">⭐ Подключить Про — 990 ₽/мес</button>
+        </div>
+        <div id="comp-content">
+          <div class="tool-head">
+            <div class="tool-head-title">📊 Анализ конкурентов</div>
+            <div class="tool-head-desc">AI анализирует нишу и даёт стратегию как обойти конкурентов. Для реальных данных о выручке — напишите нам.</div>
+          </div>
+          <div class="form-card">
+            <div class="form-row"><label>Ваш товар и ниша</label><input type="text" id="c-product" placeholder="Силиконовые формы для выпечки"></div>
+            <div class="form-row"><label>Ваша цена (руб)</label><input type="number" id="c-price" placeholder="890"></div>
+            <div class="form-row"><label>Что знаете о конкурентах?</label><textarea id="c-info" placeholder="Их цены, количество отзывов, слабые стороны..."></textarea></div>
+            <button class="gen-btn" onclick="genComp()">📊 Проанализировать нишу</button>
+          </div>
+          <div class="loading" id="c-loading"><div class="spinner"></div><span>Анализируем нишу...</span></div>
+          <div class="result-card" id="c-result"><div class="result-header"><span class="result-label">Анализ конкурентов</span><button class="copy-btn" onclick="cp('c-out')">Копировать</button></div><div class="result-text" id="c-out"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ MENTOR — BIZ ═══ -->
+    <div class="screen" id="s-mentor">
+      <div class="tool-container">
+        <div id="mentor-locked" class="locked-screen" style="display:none">
+          <div class="locked-icon">🧠</div>
+          <div class="locked-title">AI-наставник с памятью</div>
+          <div class="locked-desc">Личный эксперт по маркетплейсам. Помнит вашу ситуацию, товары и цели — даёт персональные советы с учётом вашего бизнеса.</div>
+          <ul class="locked-features">
+            <li><span class="locked-check">✓</span>Любые вопросы о WB и Ozon</li>
+            <li><span class="locked-check">✓</span>Помнит ваши товары и ситуацию</li>
+            <li><span class="locked-check">✓</span>Пошаговые планы действий</li>
+            <li><span class="locked-check">✓</span>Разбор ошибок и стратегия роста</li>
+          </ul>
+          <button class="unlock-btn unlock-biz" onclick="showM('biz')">💎 Подключить Бизнес — 2990 ₽/мес</button>
+        </div>
+        <div id="mentor-content">
+          <div class="tool-head">
+            <div class="tool-head-title">🧠 AI-наставник</div>
+            <div class="tool-head-desc">Личный эксперт по WB и Ozon. Задайте любой вопрос — получите развёрнутый практичный ответ.</div>
+          </div>
+          <div class="form-card">
+            <div class="form-row"><label>Ваш вопрос</label><textarea id="m-q" style="min-height:110px" placeholder="Как выйти на WB с нуля? Как увеличить продажи? Что делать если товар не продаётся?"></textarea></div>
+            <div class="form-row"><label>Контекст (ниша, опыт, бюджет)</label><input type="text" id="m-ctx" placeholder="Новичок, продаю детскую одежду, бюджет 50к..."></div>
+            <button class="gen-btn" onclick="genMentor()">🧠 Получить совет</button>
+          </div>
+          <div class="loading" id="m-loading"><div class="spinner"></div><span>Наставник готовит ответ...</span></div>
+          <div class="result-card" id="m-result"><div class="result-header"><span class="result-label">Совет наставника</span><button class="copy-btn" onclick="cp('m-out')">Копировать</button></div><div class="result-text" id="m-out"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ SEASONAL — BIZ ═══ -->
+    <div class="screen" id="s-seasonal">
+      <div class="tool-container">
+        <div id="seasonal-locked" class="locked-screen" style="display:none">
+          <div class="locked-icon">📅</div>
+          <div class="locked-title">Календарь сезонности</div>
+          <div class="locked-desc">Когда пик продаж в вашей нише? Планируйте закупки, рекламу и акции заранее — не упускайте высокий сезон.</div>
+          <ul class="locked-features">
+            <li><span class="locked-check">✓</span>Сезонный анализ для вашей категории</li>
+            <li><span class="locked-check">✓</span>Прогноз продаж по месяцам</li>
+            <li><span class="locked-check">✓</span>Когда запускать рекламу</li>
+            <li><span class="locked-check">✓</span>Стратегия в низкий сезон</li>
+          </ul>
+          <button class="unlock-btn unlock-biz" onclick="showM('biz')">💎 Подключить Бизнес — 2990 ₽/мес</button>
+        </div>
+        <div id="seasonal-content">
+          <div class="tool-head">
+            <div class="tool-head-title">📅 Сезонность</div>
+            <div class="tool-head-desc">Анализ сезонности продаж и прогноз для вашей категории товаров.</div>
+          </div>
+          <div class="form-card">
+            <div class="form-row"><label>Товар и категория</label><input type="text" id="sea-product" placeholder="Новогодние украшения, спортивные товары..."></div>
+            <div class="form-row"><label>Текущие продажи (шт/мес)</label><input type="number" id="sea-sales" placeholder="50"></div>
+            <button class="gen-btn" onclick="genSeasonal()">📅 Анализ сезонности</button>
+          </div>
+          <div class="loading" id="sea-loading"><div class="spinner"></div><span>Анализируем сезонность...</span></div>
+          <div class="result-card" id="sea-result"><div class="result-header"><span class="result-label">Сезонный анализ</span><button class="copy-btn" onclick="cp('sea-out')">Копировать</button></div><div class="result-text" id="sea-out"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ FIND GOODS — BIZ ═══ -->
+    <div class="screen" id="s-findgoods">
+      <div class="tool-container">
+        <div id="findgoods-locked" class="locked-screen" style="display:none">
+          <div class="locked-icon">💡</div>
+          <div class="locked-title">Поиск прибыльных товаров</div>
+          <div class="locked-desc">AI подберёт ниши с высоким спросом и низкой конкуренцией. Узнайте какие товары реально стоит запускать прямо сейчас.</div>
+          <ul class="locked-features">
+            <li><span class="locked-check">✓</span>Ниши с высоким потенциалом</li>
+            <li><span class="locked-check">✓</span>Анализ конкурентности</li>
+            <li><span class="locked-check">✓</span>Оценка затрат на запуск</li>
+            <li><span class="locked-check">✓</span>Готовая стратегия входа</li>
+          </ul>
+          <button class="unlock-btn unlock-biz" onclick="showM('biz')">💎 Подключить Бизнес — 2990 ₽/мес</button>
+        </div>
+        <div id="findgoods-content">
+          <div class="tool-head">
+            <div class="tool-head-title">💡 Поиск прибыльных товаров</div>
+            <div class="tool-head-desc">Укажите ваш бюджет и интересы — AI предложит перспективные ниши для запуска.</div>
+          </div>
+          <div class="form-card">
+            <div class="form-row"><label>Бюджет на запуск (руб)</label><select id="fg-budget"><option>до 50 000 ₽</option><option>50 000 — 150 000 ₽</option><option>150 000 — 500 000 ₽</option><option>от 500 000 ₽</option></select></div>
+            <div class="form-row"><label>Интересные ниши или опыт</label><input type="text" id="fg-interests" placeholder="Спорт, красота, дом, детские товары..."></div>
+            <div class="form-row"><label>Что избегаем?</label><input type="text" id="fg-avoid" placeholder="Например: быстропортящееся, крупногабаритное..."></div>
+            <button class="gen-btn" onclick="genFindGoods()">💡 Найти товары</button>
+          </div>
+          <div class="loading" id="fg-loading"><div class="spinner"></div><span>Ищем прибыльные ниши...</span></div>
+          <div class="result-card" id="fg-result"><div class="result-header"><span class="result-label">Прибыльные ниши</span><button class="copy-btn" onclick="cp('fg-out')">Копировать</button></div><div class="result-text" id="fg-out"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PLANS ═══ -->
+    <div class="screen" id="s-plans">
+      <div class="pricing-header">
+        <div class="pricing-h1">Выберите <span>свой план</span></div>
+        <div class="pricing-sub">Начните бесплатно и масштабируйтесь по мере роста</div>
+      </div>
+      <div class="pricing-grid">
+        <div class="p-card">
+          <div class="p-plan">Старт</div>
+          <div class="p-price">0 <span style="font-size:14px;font-weight:400;color:var(--text3)">₽</span></div>
+          <div class="p-period">навсегда · 3 аудита в день</div>
+          <div class="p-divider"></div>
+          <ul class="p-features">
+            <li><span class="p-check">✓</span>3 аудита карточки в день</li>
+            <li><span class="p-check">✓</span>Анализ отзывов</li>
+            <li><span class="p-check">✓</span>Описания товаров</li>
+            <li><span class="p-check">✓</span>SEO ключевые слова</li>
+            <li><span class="p-check">✓</span>Офферы и УТП</li>
+          </ul>
+          <button class="p-btn" id="plan-btn-free" onclick="showM('admin')">Начать бесплатно</button>
+        </div>
+        <div class="p-card featured">
+          <div class="p-popular">ПОПУЛЯРНЫЙ</div>
+          <div class="p-plan" style="margin-top:14px">Про</div>
+          <div class="p-price"><span style="font-size:16px;font-weight:500">₽</span>990</div>
+          <div class="p-period">в месяц · безлимит анализов</div>
+          <div class="p-divider"></div>
+          <ul class="p-features">
+            <li><span class="p-check">✓</span>Безлимитные аудиты карточек</li>
+            <li><span class="p-check">✓</span>Все инструменты контента</li>
+            <li><span class="p-check">✓</span>История всех анализов</li>
+            <li><span class="p-check">✓</span>PDF-отчёты</li>
+            <li><span class="p-check">✓</span>Прибыль и расходы</li>
+            <li><span class="p-check">✓</span>Расчёт налогов</li>
+            <li><span class="p-check">✓</span>Анализ конкурентов</li>
+            <li><span class="p-check">✓</span>Приоритетная поддержка</li>
+          </ul>
+          <button class="p-btn featured-btn" onclick="showM('pro')">Подключить Про →</button>
+        </div>
+        <div class="p-card">
+          <div class="p-plan">Бизнес</div>
+          <div class="p-price"><span style="font-size:16px;font-weight:500">₽</span>2 990</div>
+          <div class="p-period">в месяц · всё включено</div>
+          <div class="p-divider"></div>
+          <ul class="p-features">
+            <li><span class="p-check">✓</span>Всё из Про плана</li>
+            <li><span class="p-check">✓</span>AI-наставник с памятью</li>
+            <li><span class="p-check">✓</span>Календарь сезонности</li>
+            <li><span class="p-check">✓</span>Поиск прибыльных товаров</li>
+            <li><span class="p-check">✓</span>Мониторинг конкурентов</li>
+            <li><span class="p-check">✓</span>Ручной анализ от команды</li>
+            <li><span class="p-check">✓</span>Реальные данные о рынке</li>
+          </ul>
+          <button class="p-btn" onclick="showM('biz')">Подключить Бизнес →</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+</div><!-- /app-layout -->
+
+<!-- MOBILE BOTTOM NAV -->
+<nav class="mobile-bottom-nav" id="mobile-nav">
+  <button class="mbn-item active" onclick="mbnNav('audit',this)"><span class="mbn-icon">🔍</span><span>Аудит</span></button>
+  <button class="mbn-item" onclick="mbnNav('reviews',this)"><span class="mbn-icon">⭐</span><span>Отзывы</span></button>
+  <button class="mbn-item" onclick="mbnNav('keywords',this)"><span class="mbn-icon">🔑</span><span>SEO</span></button>
+  <button class="mbn-item" onclick="mbnNav('descriptions',this)"><span class="mbn-icon">📝</span><span>Текст</span></button>
+  <button class="mbn-item" onclick="mbnNav('history',this)"><span class="mbn-icon">📋</span><span>История</span></button>
+  <button class="mbn-item" onclick="toggleSidebar()"><span class="mbn-icon">☰</span><span>Меню</span></button>
+</nav>
+</div><!-- /app -->
+
+<!-- ═══ MODALS ═══ -->
+<div class="modal-overlay" id="m-admin" onclick="if(event.target===this)closeM('admin')">
+  <div class="modal">
+    <div class="modal-x" onclick="closeM('admin')">✕</div>
+    <div class="modal-icon">✈️</div>
+    <div class="modal-title">Написать нам</div>
+    <div class="modal-desc">Для подключения тарифа, реального анализа данных или любых вопросов — напишите в Telegram.</div>
+    <a class="modal-tg" href="https://t.me/SU_57_T_90M" target="_blank">
+      <div class="modal-tg-icon">✈️</div>
+      <div><div class="modal-tg-name">@SU_57_T_90M</div><div class="modal-tg-sub">Нажмите чтобы открыть Telegram</div></div>
+    </a>
+    <button class="modal-close-btn" onclick="closeM('admin')">Закрыть</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="m-pro" onclick="if(event.target===this)closeM('pro')">
+  <div class="modal">
+    <div class="modal-x" onclick="closeM('pro')">✕</div>
+    <div class="modal-icon">⭐</div>
+    <div class="modal-title">Подключить Про план</div>
+    <div class="modal-desc">Безлимитные аудиты, финансовая аналитика, расчёт налогов, анализ конкурентов и история всех анализов с PDF.</div>
+    <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:11px;padding:14px;margin-bottom:14px">
+      <div style="font-size:20px;font-weight:800;margin-bottom:2px">990 ₽ <span style="font-size:12px;font-weight:400;color:var(--text3)">в месяц</span></div>
+      <div style="font-size:10px;color:var(--text3)">Безлимитные запросы · PDF-отчёты · Вся аналитика</div>
+    </div>
+    <a class="modal-tg" href="https://t.me/SU_57_T_90M" target="_blank">
+      <div class="modal-tg-icon">✈️</div>
+      <div><div class="modal-tg-name">Написать @SU_57_T_90M</div><div class="modal-tg-sub">Напишите: «Хочу Про план»</div></div>
+    </a>
+    <button class="modal-close-btn" onclick="closeM('pro')">Закрыть</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="m-biz" onclick="if(event.target===this)closeM('biz')">
+  <div class="modal">
+    <div class="modal-x" onclick="closeM('biz')">✕</div>
+    <div class="modal-icon">💎</div>
+    <div class="modal-title">Подключить Бизнес план</div>
+    <div class="modal-desc">Максимум возможностей: AI-наставник с памятью, поиск товаров, сезонность, ручной анализ от команды.</div>
+    <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:11px;padding:14px;margin-bottom:14px">
+      <div style="font-size:20px;font-weight:800;margin-bottom:2px">2 990 ₽ <span style="font-size:12px;font-weight:400;color:var(--text3)">в месяц</span></div>
+      <div style="font-size:10px;color:var(--text3)">Всё из Про · Бизнес инструменты · Приоритет</div>
+    </div>
+    <a class="modal-tg" href="https://t.me/SU_57_T_90M" target="_blank">
+      <div class="modal-tg-icon">✈️</div>
+      <div><div class="modal-tg-name">Написать @SU_57_T_90M</div><div class="modal-tg-sub">Напишите: «Хочу Бизнес план»</div></div>
+    </a>
+    <button class="modal-close-btn" onclick="closeM('biz')">Закрыть</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"><div class="toast-dot"></div><span id="toast-msg">Готово!</span></div>
+
+
+<!-- ═══ MODALS ═══ -->
+<div class="modal-overlay" id="m-admin" onclick="if(event.target===this)closeM('admin')">
+  <div class="modal">
+    <div class="modal-x" onclick="closeM('admin')">✕</div>
+    <div class="modal-icon">✈️</div>
+    <div class="modal-title">Написать нам</div>
+    <div class="modal-desc">Для подключения тарифа, реального анализа данных или любых вопросов — напишите в Telegram.</div>
+    <a class="modal-tg" href="https://t.me/SU_57_T_90M" target="_blank">
+      <div class="modal-tg-icon">✈️</div>
+      <div><div class="modal-tg-name">@SU_57_T_90M</div><div class="modal-tg-sub">Нажмите чтобы открыть Telegram</div></div>
+    </a>
+    <button class="modal-close-btn" onclick="closeM('admin')">Закрыть</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="m-pro" onclick="if(event.target===this)closeM('pro')">
+  <div class="modal">
+    <div class="modal-x" onclick="closeM('pro')">✕</div>
+    <div class="modal-icon">⭐</div>
+    <div class="modal-title">Подключить Про план</div>
+    <div class="modal-desc">Безлимитные аудиты, финансовая аналитика, расчёт налогов, анализ конкурентов и история всех анализов с PDF.</div>
+    <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:11px;padding:14px;margin-bottom:14px">
+      <div style="font-size:20px;font-weight:800;margin-bottom:2px">990 ₽ <span style="font-size:12px;font-weight:400;color:var(--text3)">в месяц</span></div>
+      <div style="font-size:10px;color:var(--text3)">Безлимитные запросы · PDF-отчёты · Вся аналитика</div>
+    </div>
+    <a class="modal-tg" href="https://t.me/SU_57_T_90M" target="_blank">
+      <div class="modal-tg-icon">✈️</div>
+      <div><div class="modal-tg-name">Написать @SU_57_T_90M</div><div class="modal-tg-sub">Напишите: «Хочу Про план»</div></div>
+    </a>
+    <button class="modal-close-btn" onclick="closeM('pro')">Закрыть</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="m-biz" onclick="if(event.target===this)closeM('biz')">
+  <div class="modal">
+    <div class="modal-x" onclick="closeM('biz')">✕</div>
+    <div class="modal-icon">💎</div>
+    <div class="modal-title">Подключить Бизнес план</div>
+    <div class="modal-desc">Максимум возможностей: AI-наставник с памятью, поиск товаров, сезонность, ручной анализ от команды.</div>
+    <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:11px;padding:14px;margin-bottom:14px">
+      <div style="font-size:20px;font-weight:800;margin-bottom:2px">2 990 ₽ <span style="font-size:12px;font-weight:400;color:var(--text3)">в месяц</span></div>
+      <div style="font-size:10px;color:var(--text3)">Всё из Про · Бизнес инструменты · Приоритет</div>
+    </div>
+    <a class="modal-tg" href="https://t.me/SU_57_T_90M" target="_blank">
+      <div class="modal-tg-icon">✈️</div>
+      <div><div class="modal-tg-name">Написать @SU_57_T_90M</div><div class="modal-tg-sub">Напишите: «Хочу Бизнес план»</div></div>
+    </a>
+    <button class="modal-close-btn" onclick="closeM('biz')">Закрыть</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"><div class="toast-dot"></div><span id="toast-msg">Готово!</span></div>
+
+<script>
+
+// ═══ SIDEBAR (mobile) ═══
+function toggleSidebar(){
+  const sb=document.querySelector('.sidebar');
+  const ov=document.getElementById('sb-overlay');
+  const isOpen=sb.classList.contains('open');
+  if(isOpen){closeSidebar();}else{
+    sb.classList.add('open');
+    ov.classList.add('vis');
+    document.body.style.overflow='hidden';
+  }
+}
+function closeSidebar(){
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('sb-overlay').classList.remove('vis');
+  document.body.style.overflow='';
+}
+function mbnNav(id,btn){
+  document.querySelectorAll('.mbn-item').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  nav(id,null);
+  closeSidebar();
+}
+
+// ═══ CONSTANTS ═══
+const PRO=['finance','taxes','competitors'];
+const BIZ=['mentor','seasonal','findgoods'];
+const FREE_LIMIT=3;
+const PAGE_TITLES={
+  audit:['Аудит карточки','Узнай почему твой товар не продаётся'],
+  reviews:['Анализ отзывов','Что хвалят и за что жалуются покупатели'],
+  history:['История анализов','Все ваши сохранённые результаты'],
+  descriptions:['Описание товара','Продающий текст за 10 секунд'],
+  keywords:['SEO ключевые слова','Вывод товара в топ поиска'],
+  offers:['Оффер и УТП','Почему купят именно у вас'],
+  finance:['Прибыль и расходы','Полный финансовый анализ'],
+  taxes:['Расчёт налогов','УСН, самозанятый — что выгоднее'],
+  competitors:['Анализ конкурентов','Стратегия обхода конкурентов'],
+  mentor:['AI-наставник','Личный эксперт по маркетплейсам'],
+  seasonal:['Сезонность','Когда пик продаж в вашей нише'],
+  findgoods:['Поиск товаров','Прибыльные ниши для запуска'],
+  plans:['Тарифы','Выберите подходящий план']
+};
+
+// ═══ AUTH ═══
+let currentUser=null;
+let selectedPlan='free';
+
+// Безопасное хранилище — работает везде включая Safari на iPhone
+const Store={
+  _data:{},
+  get(k){
+    try{return localStorage.getItem(k);}catch(e){return this._data[k]||null;}
+  },
+  set(k,v){
+    try{localStorage.setItem(k,v);}catch(e){this._data[k]=v;}
+  },
+  remove(k){
+    try{localStorage.removeItem(k);}catch(e){delete this._data[k];}
+  }
+};
+
+function getUsers(){
+  try{return JSON.parse(Store.get('pai_users')||'[]');}catch(e){return [];}
+}
+function saveUsers(u){Store.set('pai_users',JSON.stringify(u));}
+function getSession(){return Store.get('pai_session');}
+function setSession(email){Store.set('pai_session',email);}
+function clearSession(){Store.remove('pai_session');}
+
+function switchTab(t){
+  document.getElementById('tab-login').classList.toggle('active',t==='login');
+  document.getElementById('tab-register').classList.toggle('active',t==='register');
+  document.getElementById('form-login').style.display=t==='login'?'block':'none';
+  document.getElementById('form-register').style.display=t==='register'?'block':'none';
+  document.getElementById('auth-title').textContent=t==='login'?'С возвращением':'Создать аккаунт';
+  document.getElementById('auth-sub').textContent=t==='login'?'Войдите чтобы продолжить работу':'Регистрация бесплатная — 3 аудита в день';
+}
+
+function selectPlan(p){
+  selectedPlan=p;
+  ['free','pro','biz'].forEach(x=>document.getElementById('plan-'+x).classList.toggle('selected',x===p));
+}
+
+function doLogin(){
+  try{
+    const email=document.getElementById('l-email').value.trim();
+    const pass=document.getElementById('l-pass').value;
+    if(!email||!pass){
+      const err=document.getElementById('l-err');
+      err.style.display='block';
+      err.textContent='Введите email и пароль';
+      return;
+    }
+    const users=getUsers();
+    const user=users.find(u=>u.email===email&&u.password===pass);
+    if(!user){
+      const err=document.getElementById('l-err');
+      err.style.display='block';
+      err.textContent=users.length===0?'Сначала зарегистрируйтесь':'Неверный email или пароль';
+      return;
+    }
+    document.getElementById('l-err').style.display='none';
+    setSession(email);
+    loadApp(user);
+  }catch(ex){
+    console.error('Login error:',ex);
+    toast('Ошибка входа: '+ex.message,'err');
+  }
+}
+
+function doRegister(){
+  try{
+    const name=document.getElementById('r-name').value.trim();
+    const email=document.getElementById('r-email').value.trim();
+    const pass=document.getElementById('r-pass').value;
+    const err=document.getElementById('r-err');
+    if(!name||!email||!pass){err.style.display='block';err.textContent='Заполните все поля';return;}
+    if(pass.length<6){err.style.display='block';err.textContent='Пароль минимум 6 символов';return;}
+    const users=getUsers();
+    if(users.find(u=>u.email===email)){err.style.display='block';err.textContent='Email уже используется';return;}
+    err.style.display='none';
+    const newUser={name,email,password:pass,plan:selectedPlan,created:Date.now(),todayCount:0,todayDate:today()};
+    users.push(newUser);
+    saveUsers(users);
+    setSession(email);
+    loadApp(newUser);
+  }catch(ex){
+    console.error('Register error:',ex);
+    toast('Ошибка регистрации: '+ex.message,'err');
+  }
+}
+
+function doLogout(){
+  clearSession();
+  currentUser=null;
+  document.getElementById('app').style.display='none';
+  document.getElementById('auth-screen').style.display='flex';
+}
+
+function today(){return new Date().toDateString()}
+
+function loadApp(user){
+  // Reset daily count if new day
+  if(user.todayDate!==today()){user.todayCount=0;user.todayDate=today();saveUser(user);}
+  currentUser=user;
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  updateSidebar();
+  nav('audit',document.querySelector('.sb-nav-item'));
+}
+
+function saveUser(u){
+  const users=getUsers();
+  const i=users.findIndex(x=>x.email===u.email);
+  if(i>=0){users[i]=u;saveUsers(users);}
+}
+
+function updateSidebar(){
+  const u=currentUser;
+  const initials=u.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('sb-avatar').textContent=initials;
+  const colors={free:'#5b5580',pro:'#d97706',biz:'#be185d'};
+  document.getElementById('sb-avatar').style.background=colors[u.plan]||'#5b5580';
+  document.getElementById('sb-name').textContent=u.name;
+  document.getElementById('sb-plan-label').textContent='Тариф: '+{free:'Старт',pro:'Про',biz:'Бизнес'}[u.plan];
+  const badge=document.getElementById('sb-badge');
+  badge.textContent={free:'FREE',pro:'PRO',biz:'BIZ'}[u.plan];
+  badge.className='sb-plan-badge badge-'+u.plan;
+  const limitBox=document.getElementById('sb-limit-box');
+  if(u.plan==='free'){
+    limitBox.style.display='block';
+    document.getElementById('sb-limit-count').textContent=u.todayCount+' / '+FREE_LIMIT;
+    const pct=(u.todayCount/FREE_LIMIT)*100;
+    const fill=document.getElementById('sb-limit-fill');
+    fill.style.width=pct+'%';
+    fill.className='sb-limit-fill'+(pct>=100?' danger':pct>=60?' warn':'');
+  } else {
+    limitBox.style.display='none';
+  }
+  // Update limit label in audit screen
+  if(u.plan==='free'){
+    const remaining=Math.max(0,FREE_LIMIT-u.todayCount);
+    const ll=document.getElementById('limit-label');if(ll)ll.textContent='Осталось: '+remaining+' из '+FREE_LIMIT;
+  } else {
+    const ll2=document.getElementById('limit-label');if(ll2)ll2.textContent='Безлимит ∞';
+  }
+}
+
+// ═══ NAVIGATION ═══
+function nav(id,btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.sb-nav-item').forEach(n=>n.classList.remove('active'));
+  const screen=document.getElementById('s-'+id);
+  if(!screen){console.error('Screen not found: s-'+id);return;}
+  screen.classList.add('active');
+  if(btn){btn.classList.add('active');}
+  else{
+    document.querySelectorAll('.sb-nav-item').forEach(n=>{
+      const oc=n.getAttribute('onclick')||'';
+      if(oc.includes("'"+id+"'"))n.classList.add('active');
+    });
+  }
+  // Close sidebar on mobile after nav
+  if(window.innerWidth<=680)closeSidebar();
+  const t=PAGE_TITLES[id]||[id,''];
+  document.getElementById('tb-title').textContent=t[0];
+  document.getElementById('tb-sub').textContent=t[1];
+  // Pro locked screens — id это 'finance','taxes','competitors'
+  const u=currentUser;
+  if(PRO.includes(id)){
+    const locked=u.plan==='free';
+    // идентификаторы: finance-locked, taxes-locked, comp-locked
+    const lockKey=id==='competitors'?'comp':id;
+    const lEl=document.getElementById(lockKey+'-locked');
+    const cEl=document.getElementById(lockKey+'-content');
+    if(lEl)lEl.style.display=locked?'block':'none';
+    if(cEl)cEl.style.display=locked?'none':'block';
+  }
+  if(BIZ.includes(id)){
+    const locked=u.plan!=='biz';
+    const lEl=document.getElementById(id+'-locked');
+    const cEl=document.getElementById(id+'-content');
+    if(lEl)lEl.style.display=locked?'block':'none';
+    if(cEl)cEl.style.display=locked?'none':'block';
+  }
+  if(id==='history')loadHistory();
+  if(id==='plans')updatePlansScreen();
+  window.scrollTo(0,0);
+}
+
+// ═══ MODALS ═══
+function showM(t){document.getElementById('m-'+t).classList.add('vis')}
+function closeM(t){document.getElementById('m-'+t).classList.remove('vis')}
+
+// ═══ TOAST ═══
+function toast(msg,type='ok'){
+  const el=document.getElementById('toast');
+  const dot=el.querySelector('.toast-dot');
+  document.getElementById('toast-msg').textContent=msg;
+  dot.style.background=type==='err'?'#ef4444':'#10b981';
+  dot.style.boxShadow='0 0 6px '+(type==='err'?'#ef4444':'#10b981');
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+// ═══ COPY ═══
+function cp(id){
+  navigator.clipboard.writeText(document.getElementById(id).textContent).then(()=>toast('Скопировано ✓'));
+}
+
+// ═══ AI CALL (Google Gemini) ═══
+const _K='AQ.Ab8RN6LKsFOapwcMv1otwpcpNGNV2Yt1KQJM72vfBkxaaC2AYA';
+
+async function ai(prompt){
+  const url='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+_K;
+  const r=await fetch(url,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      contents:[{parts:[{text:prompt}]}],
+      generationConfig:{maxOutputTokens:1500,temperature:0.7}
+    })
+  });
+  const d=await r.json();
+  if(d.error){
+    if(d.error.code===400){toast('Неверный API ключ. Обратитесь к администратору.','err');throw new Error('auth');}
+    if(d.error.code===429){toast('Слишком много запросов, подождите немного','err');throw new Error('rate limit');}
+    throw new Error(d.error.message||'API error');
+  }
+  if(!d.candidates||!d.candidates[0])throw new Error('empty response');
+  return d.candidates[0].content.parts[0].text;
+}
+
+function showLoad(id){
+  const el=document.getElementById(id+'-loading');
+  if(el){el.style.display='flex';el.classList.add('vis');}
+  // Disable all gen buttons
+  document.querySelectorAll('.gen-btn,.audit-btn').forEach(b=>b.disabled=true);
+}
+function hideLoad(id){
+  const el=document.getElementById(id+'-loading');
+  if(el){el.style.display='none';el.classList.remove('vis');}
+  // Re-enable all gen buttons
+  document.querySelectorAll('.gen-btn').forEach(b=>b.disabled=false);
+  // Re-enable audit btn only if URL is filled
+  const auditUrl=document.getElementById('audit-url');
+  if(auditUrl)document.getElementById('audit-btn').disabled=!auditUrl.value.trim();
+}
+function showResult(id,text){
+  const card=document.getElementById(id+'-result');
+  if(card){card.style.display='block';card.classList.add('vis');}
+  const outEl=document.getElementById(id+'-out')||document.getElementById(id+'-text-out');
+  if(outEl)outEl.textContent=text;
+}
+
+// ═══ LIMIT CHECK ═══
+function checkLimit(){
+  if(!currentUser)return false;
+  if(currentUser.plan!=='free')return true;
+  if(currentUser.todayCount>=FREE_LIMIT){
+    showM('pro');
+    return false;
+  }
+  return true;
+}
+function useLimit(){
+  if(currentUser.plan==='free'){
+    currentUser.todayCount++;
+    saveUser(currentUser);
+    updateSidebar();
+  }
+}
+
+// ═══ AUDIT ═══
+let lastAuditData=null;
+
+function updateAuditBtn(){
+  const val=document.getElementById('audit-url').value.trim();
+  document.getElementById('audit-btn').disabled=!val;
+}
+
+async function runAudit(){
+  if(!checkLimit())return;
+  const url=document.getElementById('audit-url').value.trim();
+  if(!url){toast('Введите ссылку на товар','err');return;}
+  // Validate it looks like a URL
+  if(!url.startsWith('http')&&!url.includes('wildberries')&&!url.includes('ozon')&&!url.includes('wb.ru')){
+    toast('Вставьте ссылку на товар (начинается с https://)','err');
+    return;
+  }
+  const loadingEl=document.getElementById('audit-loading');
+  const resultEl=document.getElementById('audit-result');
+  loadingEl.style.display='flex';
+  resultEl.style.display='none';
+  resultEl.classList.remove('visible');
+  
+  const loadTexts=['Анализируем карточку...','Проверяем SEO...','Оцениваем конкурентоспособность...','Готовим план действий...'];
+  let lt=0;
+  const lInterval=setInterval(()=>{lt=(lt+1)%loadTexts.length;document.getElementById('audit-loading-text').textContent=loadTexts[lt];},2000);
+
+  try{
+    const platform=url.includes('ozon')?'Ozon':'Wildberries';
+    const result=await ai(`Ты эксперт по маркетплейсам с опытом 8+ лет. Пользователь загрузил ссылку на товар на ${platform}: ${url}
+
+Проведи детальный аудит карточки товара. Верни ТОЛЬКО JSON в таком формате (ничего лишнего!):
+{
+  "score": <число 0-100>,
+  "verdict": "<одна строка: вердикт о состоянии карточки>",
+  "sections": [
+    {"icon":"📋","name":"Заголовок","score":<0-100>,"status":"<good|warn|bad>","text":"<2-3 предложения — что не так и как исправить>"},
+    {"icon":"📝","name":"Описание","score":<0-100>,"status":"<good|warn|bad>","text":"<анализ описания>"},
+    {"icon":"📸","name":"Фото и медиа","score":<0-100>,"status":"<good|warn|bad>","text":"<анализ>"},
+    {"icon":"🔍","name":"SEO и ключевые слова","score":<0-100>,"status":"<good|warn|bad>","text":"<анализ SEO>"},
+    {"icon":"💰","name":"Цена и позиционирование","score":<0-100>,"status":"<good|warn|bad>","text":"<анализ ценообразования>"},
+    {"icon":"⭐","name":"Отзывы и рейтинг","score":<0-100>,"status":"<good|warn|bad>","text":"<анализ отзывов>"}
+  ],
+  "action_plan": "<детальный план действий — что сделать в первую очередь. Нумерованный список через \\n. Конкретно и практично.>"
+}`);
+    clearInterval(lInterval);
+    const json=JSON.parse(result.replace(/```json|```/g,'').trim());
+    lastAuditData={url,platform,data:json,date:new Date().toISOString()};
+    renderAuditResult(json,url);
+    useLimit();
+    // Auto-save to history
+    const h=getHistory();h.unshift(lastAuditData);saveHistory(h.slice(0,50));
+  }catch(e){
+    clearInterval(lInterval);
+    toast('Ошибка анализа. Попробуйте снова.','err');
+    console.error(e);
+  }
+  loadingEl.style.display='none';
+}
+
+function renderAuditResult(d,url){
+  const score=d.score||0;
+  document.getElementById('ar-num').textContent=score;
+  const ring=document.getElementById('ar-ring');
+  const circumference=163.4;
+  ring.style.strokeDashoffset=circumference-(circumference*score/100);
+  const color=score>=70?'var(--green2)':score>=40?'var(--orange2)':'var(--red2)';
+  ring.style.stroke=color;
+  document.getElementById('ar-num').style.color=color;
+  document.getElementById('ar-verdict').textContent=d.verdict||'Аудит завершён';
+  document.getElementById('ar-sub').textContent='из 100 баллов · '+url.split('/')[2];
+  
+  const sectionsEl=document.getElementById('ar-sections');
+  sectionsEl.innerHTML='';
+  (d.sections||[]).forEach((s,i)=>{
+    const scoreClass=s.status==='good'?'score-green':s.status==='warn'?'score-yellow':'score-red';
+    const div=document.createElement('div');
+    div.className='ar-section';
+    div.innerHTML=`<div class="ar-section-head" onclick="toggleSection(this.parentElement)">
+      <div class="ar-section-left"><span class="ar-section-icon">${s.icon}</span><span class="ar-section-name">${s.name}</span></div>
+      <span class="ar-score-badge ${scoreClass}">${s.score}/100</span>
+      <span class="ar-section-arrow">▼</span>
+    </div>
+    <div class="ar-section-body"><div class="ar-section-text">${s.text}</div></div>`;
+    sectionsEl.appendChild(div);
+  });
+  
+  document.getElementById('ar-plan').textContent=d.action_plan||'';
+  document.getElementById('audit-result').style.display='block';
+  document.getElementById('audit-result').classList.add('visible');
+}
+
+function toggleSection(el){
+  el.classList.toggle('open');
+}
+
+// ═══ SAVE TO HISTORY ═══
+function getHistory(){return JSON.parse(localStorage.getItem('pai_history_'+currentUser.email)||'[]')}
+function saveHistory(h){localStorage.setItem('pai_history_'+currentUser.email,JSON.stringify(h))}
+
+function saveToHistory(){
+  if(!lastAuditData){toast('Нет данных для сохранения','err');return;}
+  toast('Аудит уже сохранён автоматически ✓');
+}
+
+function loadHistory(){
+  const h=getHistory();
+  const list=document.getElementById('history-list');
+  if(!h.length){
+    list.innerHTML='<div class="empty-state"><div class="empty-state-icon">📋</div><div>История анализов пуста</div><div style="font-size:11px;margin-top:6px">Проведите аудит карточки — результат можно сохранить</div></div>';
+    return;
+  }
+  list.innerHTML=h.map((item,i)=>{
+    const d=item.data;
+    const score=d?.score||0;
+    const scoreBg=score>=70?'rgba(5,150,105,0.15)':score>=40?'rgba(217,119,6,0.12)':'rgba(220,38,38,0.1)';
+    const scoreC=score>=70?'var(--green2)':score>=40?'var(--orange2)':'var(--red2)';
+    const date=new Date(item.date).toLocaleDateString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    const shortUrl=item.url.length>55?item.url.slice(0,55)+'...':item.url;
+    return `<div class="history-item">
+      <div class="history-score" style="background:${scoreBg};color:${scoreC}">${score}</div>
+      <div class="history-info">
+        <div class="history-url">${shortUrl}</div>
+        <div class="history-meta"><span>${item.platform||'WB'}</span><span>${date}</span></div>
+      </div>
+      <div class="history-actions">
+        <button class="hist-btn primary" onclick="openHistoryItem(${i})">Открыть</button>
+        <button class="hist-btn" onclick="exportHistoryPDF(${i})">PDF</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openHistoryItem(i){
+  const item=getHistory()[i];
+  if(!item)return;
+  lastAuditData=item;
+  document.getElementById('audit-url').value=item.url;
+  renderAuditResult(item.data,item.url);
+  nav('audit',document.querySelector('.sb-nav-item'));
+}
+
+function clearHistory(){
+  if(!confirm('Очистить всю историю анализов?'))return;
+  saveHistory([]);
+  loadHistory();
+  toast('История очищена');
+}
+
+// ═══ PDF EXPORT ═══
+function exportPDF(){
+  if(!lastAuditData){toast('Нет данных для экспорта','err');return;}
+  generatePDF(lastAuditData);
+  toast('PDF открыт в новой вкладке 📄');
+}
+function exportHistoryPDF(i){
+  const item=getHistory()[i];
+  if(item)generatePDF(item);
+}
+
+function generatePDF(item){
+  const d=item.data;
+  const date=new Date(item.date||Date.now()).toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'});
+  const scoreColor=d.score>=70?'#059669':d.score>=40?'#d97706':'#dc2626';
+  const sections=(d.sections||[]).map(s=>`
+    <div style="border:1px solid #e5e7eb;border-radius:10px;margin-bottom:10px;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#f9fafb">
+        <div style="font-weight:600;font-size:14px">${s.icon} ${s.name}</div>
+        <div style="font-size:13px;font-weight:700;color:${s.status==='good'?'#059669':s.status==='warn'?'#d97706':'#dc2626'}">${s.score}/100</div>
+      </div>
+      <div style="padding:12px 16px;font-size:13px;color:#374151;line-height:1.6">${s.text}</div>
+    </div>`).join('');
+  const plan=(d.action_plan||'').replace(/\n/g,'<br>');
+  const html=`<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Аудит карточки — Продажник.AI</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;margin:0;padding:32px;color:#111827;font-size:14px;line-height:1.6;background:#fff}@media print{body{padding:20px}}</style></head><body>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #6d28d9">
+    <div><div style="font-size:20px;font-weight:900;color:#6d28d9">🚀 Продажник.AI</div><div style="font-size:12px;color:#6b7280">Аудит карточки товара · ${date}</div></div>
+    <div style="text-align:center;background:#f3f4f6;border-radius:12px;padding:12px 20px"><div style="font-size:32px;font-weight:900;color:${scoreColor}">${d.score}</div><div style="font-size:11px;color:#6b7280">из 100</div></div>
+  </div>
+  <div style="background:#f9fafb;border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:#6b7280;word-break:break-all"><strong>Ссылка:</strong> ${item.url}</div>
+  <div style="background:${d.score>=70?'#ecfdf5':d.score>=40?'#fffbeb':'#fef2f2'};border:1px solid ${d.score>=70?'#d1fae5':d.score>=40?'#fde68a':'#fecaca'};border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:13px;font-weight:600;color:${scoreColor}">${d.verdict}</div>
+  <h2 style="font-size:16px;font-weight:700;margin-bottom:12px;color:#111827">📊 Анализ по параметрам</h2>
+  ${sections}
+  <h2 style="font-size:16px;font-weight:700;margin:20px 0 12px;color:#111827">🎯 План действий</h2>
+  <div style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:10px;padding:16px;font-size:13px;line-height:1.8;color:#374151">${plan}</div>
+  <div style="margin-top:24px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;text-align:center">Продажник.AI · t.me/SU_57_T_90M · Сгенерировано ${date}</div>
+  window.print();<\/script></body></html>`;
+  const w=window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
+}
+
+// ═══ TOOL GENERATORS ═══
+async function analyzeReviews(){
+  const t=document.getElementById('rev-text').value;
+  if(!t){toast('Вставьте отзывы покупателей','err');return;}
+  showLoad('rev');
+  try{
+    const r=await ai(`Ты маркетолог и аналитик отзывов. Проанализируй отзывы покупателей.\nТовар: ${document.getElementById('rev-product').value||'не указан'}\nРейтинг: ${document.getElementById('rev-rating').value}\nОтзывы:\n${t}\n\nДай структурированный анализ:\n1. ГЛАВНЫЕ ЖАЛОБЫ (топ-5 что ругают)\n2. ЧТО ХВАЛЯТ (топ-5 преимуществ)\n3. СКРЫТЫЕ ИНСАЙТЫ (что не написано прямо, но подразумевается)\n4. КАК ПОДНЯТЬ РЕЙТИНГ (5 конкретных улучшений)\n5. ШАБЛОН ОТВЕТА НА НЕГАТИВНЫЙ ОТЗЫВ`);
+    document.getElementById('rev-result').style.display='block';
+    document.getElementById('rev-result').classList.add('vis');
+    document.getElementById('rev-text-out').textContent=r;
+  }catch(e){toast('Ошибка','err');console.error(e);}
+  hideLoad('rev');
+}
+
+async function genDesc(){
+  const p=document.getElementById('d-product').value;if(!p){toast('Введите название товара','err');return;}
+  showLoad('d');
+  try{const r=await ai(`Ты копирайтер для маркетплейсов. Напиши продающее описание для ${document.getElementById('d-platform').value}.\nТовар: ${p}\nКатегория: ${document.getElementById('d-cat').value}\nХарактеристики: ${document.getElementById('d-features').value||'не указаны'}\n\n1. ЗАГОЛОВОК (с главным ключевым словом)\n2. ГЛАВНЫЕ ВЫГОДЫ (5 пунктов с эмодзи, фокус на пользу а не характеристики)\n3. ОПИСАНИЕ (150-200 слов, убедительно, с ключевыми словами)\n4. ХАРАКТЕРИСТИКИ (таблицей)\n5. ПРИЗЫВ К ДЕЙСТВИЮ`);
+  showResult('d',r);}catch(e){toast('Ошибка','err');}
+  hideLoad('d');
+}
+
+async function genKeywords(){
+  const p=document.getElementById('kw-product').value;if(!p){toast('Введите товар','err');return;}
+  showLoad('kw');
+  try{const r=await ai(`Ты SEO-специалист по маркетплейсам. Подбери ключевые слова для ${document.getElementById('kw-platform').value}.\nТовар: ${p}\nКатегория: ${document.getElementById('kw-cat').value||'не указана'}\n\n1. ОПТИМИЗИРОВАННЫЙ ЗАГОЛОВОК (до 100 символов)\n2. ВЫСОКОЧАСТОТНЫЕ ЗАПРОСЫ (10-15 штук)\n3. СРЕДНЕЧАСТОТНЫЕ ЗАПРОСЫ (10-15 штук)\n4. НИЗКОЧАСТОТНЫЕ ЗАПРОСЫ (10-15 штук)\n5. СОВЕТЫ ПО ОПТИМИЗАЦИИ КАРТОЧКИ`);
+  showResult('kw',r);}catch(e){toast('Ошибка','err');}
+  hideLoad('kw');
+}
+
+async function genOffer(){
+  const p=document.getElementById('o-product').value;if(!p){toast('Введите товар','err');return;}
+  showLoad('o');
+  try{const r=await ai(`Ты маркетолог. Создай сильный оффер и УТП.\nТовар: ${p}\nПреимущество: ${document.getElementById('o-adv').value||'не указано'}\nАудитория: ${document.getElementById('o-audience').value||'не указана'}\nЦена: ${document.getElementById('o-price').value||'не указана'} руб\n\n1. УТП — одна строка почему купят именно у вас\n2. ГЛАВНЫЙ ЗАГОЛОВОК + ПОДЗАГОЛОВОК\n3. ВЫГОДЫ ДЛЯ ПОКУПАТЕЛЯ (5 пунктов)\n4. ОФФЕР ДЛЯ КАРТОЧКИ WB/Ozon\n5. ОФФЕР ДЛЯ TELEGRAM`);
+  showResult('o',r);}catch(e){toast('Ошибка','err');}
+  hideLoad('o');
+}
+
+async function calcFinance(){
+  const price=parseFloat(document.getElementById('f-price').value)||0;
+  const cost=parseFloat(document.getElementById('f-cost').value)||0;
+  const qty=parseFloat(document.getElementById('f-qty').value)||0;
+  const comm=parseFloat(document.getElementById('f-comm').value)||0;
+  const log=parseFloat(document.getElementById('f-log').value)||0;
+  const ads=parseFloat(document.getElementById('f-ads').value)||0;
+  if(!price||!qty){toast('Введите цену и количество продаж','err');return;}
+  const rev=price*qty;const commA=rev*comm/100;const exp=commA+log*qty+cost*qty+ads;const profit=rev-exp;const margin=rev>0?(profit/rev*100).toFixed(1):0;
+  document.getElementById('fin-results').classList.add('vis');
+  document.getElementById('f-rev').textContent=Math.round(rev).toLocaleString('ru')+' ₽';
+  document.getElementById('f-exp').textContent=Math.round(exp).toLocaleString('ru')+' ₽';
+  document.getElementById('f-prof').textContent=Math.round(profit).toLocaleString('ru')+' ₽';
+  document.getElementById('f-prof').style.color=profit>=0?'var(--green2)':'var(--red2)';
+  document.getElementById('f-margin').textContent='Маржинальность: '+margin+'%';
+  showLoad('f');
+  try{const r=await ai(`Финансовый анализ.\nВыручка: ${Math.round(rev).toLocaleString()}₽, Расходы: ${Math.round(exp).toLocaleString()}₽, Прибыль: ${Math.round(profit).toLocaleString()}₽, Маржа: ${margin}%\nЦена: ${price}₽, Себестоимость: ${cost}₽, Продаж: ${qty}шт, Комиссия: ${comm}%, Логистика: ${log}₽/шт, Реклама: ${ads}₽/мес\n\nДай:\n1. Оценку показателей (хорошо/плохо для маркетплейсов)\n2. Главные проблемы\n3. ТОП-5 конкретных способов увеличить прибыль\n4. Прогноз при оптимизации`);
+  showResult('f',r);}catch(e){toast('Ошибка AI анализа','err');console.error(e);}
+  hideLoad('f');
+}
+
+async function calcTaxes(){
+  const i=document.getElementById('t-income').value;if(!i){toast('Введите доход','err');return;}
+  showLoad('t');
+  try{const r=await ai(`Налоговый расчёт для продавца на маркетплейсе.\nСтатус: ${document.getElementById('t-status').value}\nДоход: ${i}₽/мес, Расходы: ${document.getElementById('t-exp').value}₽/мес\nВопрос: ${document.getElementById('t-q').value||'нет'}\n\n1. Точный расчёт налога за месяц и год\n2. Когда и как платить\n3. Сравнение режимов\n4. Законные способы уменьшить налог\n5. Страховые взносы ИП\n\nПиши понятно, с конкретными цифрами. Расчёты приблизительные.`);
+  showResult('t',r);}catch(e){toast('Ошибка','err');}
+  hideLoad('t');
+}
+
+async function genComp(){
+  const p=document.getElementById('c-product').value;if(!p){toast('Введите товар','err');return;}
+  showLoad('c');
+  try{const r=await ai(`Эксперт по маркетплейсам анализирует нишу.\nТовар: ${p}, Цена: ${document.getElementById('c-price').value}₽\nО конкурентах: ${document.getElementById('c-info').value||'не указано'}\n\n1. Анализ конкурентной среды в нише\n2. Слабые места конкурентов\n3. ТОП-5 способов выделиться\n4. Стратегия ценообразования\n5. SEO против конкурентов\n6. Рекомендации по рекламе\n\nАнализ на основе типичных паттернов ниши.`);
+  showResult('c',r);}catch(e){toast('Ошибка','err');}
+  hideLoad('c');
+}
+
+async function genMentor(){
+  const q=document.getElementById('m-q').value;if(!q){toast('Введите вопрос','err');return;}
+  showLoad('m');
+  try{const r=await ai(`Ты опытный наставник по WB и Ozon, 7+ лет опыта.\nКонтекст: ${document.getElementById('m-ctx').value||'не указан'}\nВопрос: ${q}\n\nДай развёрнутый практичный ответ:\n— Прямой ответ\n— Пошаговый план действий\n— Типичные ошибки\n— Конкретные примеры\n— Главные советы\n\nЧестно, без воды, с конкретикой.`);
+  showResult('m',r);}catch(e){toast('Ошибка','err');}
+  hideLoad('m');
+}
+
+async function genSeasonal(){
+  const p=document.getElementById('sea-product').value;if(!p){toast('Введите товар','err');return;}
+  showLoad('sea');
+  try{const r=await ai(`Анализ сезонности для продавца на маркетплейсе.\nТовар: ${p}, Продажи: ${document.getElementById('sea-sales').value||'неизвестно'}шт/мес\n\n1. Сезонный профиль этой категории по месяцам (пики и спады)\n2. Прогноз продаж по месяцам (в % от среднего)\n3. Когда закупать товар\n4. Когда запускать рекламу\n5. Стратегия в низкий сезон\n6. Подготовка к пиковым периодам`);
+  showResult('sea',r);}catch(e){toast('Ошибка','err');}
+  hideLoad('sea');
+}
+
+async function genFindGoods(){
+  showLoad('fg');
+  try{const r=await ai(`Подбор товаров для запуска на WB/Ozon.\nБюджет: ${document.getElementById('fg-budget').value}\nИнтересы: ${document.getElementById('fg-interests').value||'любые'}\nИзбегаем: ${document.getElementById('fg-avoid').value||'ничего'}\n\nПредложи 5 прибыльных ниш:\nДля каждой:\n— Название ниши\n— Почему выгодно (спрос, маржа, конкуренция)\n— Примеры конкретных товаров\n— Примерный старт (бюджет, SKU)\n— Главный риск\n— Оценка потенциала (1-10)\n\nФокус на реальные рабочие ниши.`);
+  showResult('fg',r);}catch(e){toast('Ошибка','err');}
+  hideLoad('fg');
+}
+
+function updatePlansScreen(){
+  const plan=currentUser?.plan||'free';
+  const btns={free:'plan-btn-free'};
+  // Reset all plan buttons
+  document.querySelectorAll('.p-btn').forEach(b=>{
+    b.disabled=false;
+    if(b.id==='plan-btn-free'){
+      if(plan==='free'){b.textContent='✓ Ваш текущий план';b.disabled=true;}
+      else{b.textContent='Начать бесплатно';b.disabled=false;}
+    }
+  });
+  // Find Pro button (second p-card)
+  const pCards=document.querySelectorAll('.p-card');
+  if(pCards[1]){
+    const proBtn=pCards[1].querySelector('.p-btn');
+    if(proBtn){
+      if(plan==='pro'){proBtn.textContent='✓ Ваш текущий план';proBtn.disabled=true;proBtn.style.background='var(--bg4)';}
+      else{proBtn.textContent='Подключить Про →';proBtn.disabled=false;}
+    }
+  }
+  if(pCards[2]){
+    const bizBtn=pCards[2].querySelector('.p-btn');
+    if(bizBtn){
+      if(plan==='biz'){bizBtn.textContent='✓ Ваш текущий план';bizBtn.disabled=true;}
+      else{bizBtn.textContent='Подключить Бизнес →';bizBtn.disabled=false;}
+    }
+  }
+}
+
+
+
+// ═══ INIT ═══
+(function init(){
+  const session=getSession();
+  if(session){
+    const users=getUsers();
+    const user=users.find(u=>u.email===session);
+    if(user){loadApp(user);return;}
+  }
+  document.getElementById('auth-screen').style.display='flex';
+  document.getElementById('app').style.display='none';
+})();
+</script>
+</body>
+</html>
